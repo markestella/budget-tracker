@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import Card from './ui/Card';
 import Typography from './ui/Typography';
 import Button from './ui/Button';
@@ -14,6 +15,7 @@ interface PricingPlan {
   popular?: boolean;
   buttonText: string;
   buttonVariant?: 'primary' | 'secondary' | 'outline';
+  buttonLink?: string;
 }
 
 interface PricingCardProps {
@@ -67,13 +69,25 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan }) => {
         ))}
       </ul>
 
-      <Button 
-        variant={plan.buttonVariant || 'primary'} 
-        size="lg" 
-        className="w-full"
-      >
-        {plan.buttonText}
-      </Button>
+      {plan.buttonLink ? (
+        <Link href={plan.buttonLink}>
+          <Button 
+            variant={plan.buttonVariant || 'primary'} 
+            size="lg" 
+            className="w-full"
+          >
+            {plan.buttonText}
+          </Button>
+        </Link>
+      ) : (
+        <Button 
+          variant={plan.buttonVariant || 'primary'} 
+          size="lg" 
+          className="w-full"
+        >
+          {plan.buttonText}
+        </Button>
+      )}
     </Card>
   );
 };

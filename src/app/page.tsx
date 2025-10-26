@@ -1,6 +1,7 @@
 'use client';
 
 import React from "react";
+import Link from "next/link";
 import Section from "../components/ui/Section";
 import { useTheme } from "../components/ThemeProvider";
 import Typography from "../components/ui/Typography";
@@ -21,6 +22,7 @@ export default function Home() {
       features: ["Track expenses", "Set budgets", "Manage income"],
       buttonText: "Get Started",
       buttonVariant: "outline" as const,
+      buttonLink: "/login",
     },
     {
       name: "Premium",
@@ -104,7 +106,9 @@ export default function Home() {
 
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button size="sm">Get Started</Button>
+              <Link href="/login">
+                <Button size="sm">Get Started</Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -136,9 +140,11 @@ export default function Home() {
             </Typography>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button size="lg">
-                Get Started Free
-              </Button>
+              <Link href="/login">
+                <Button size="lg">
+                  Get Started Free
+                </Button>
+              </Link>
               <Button variant="outline" size="lg">
                 Learn More
               </Button>

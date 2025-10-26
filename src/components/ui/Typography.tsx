@@ -5,7 +5,7 @@ import { useTheme } from '../ThemeProvider';
 
 interface TypographyProps {
   children: React.ReactNode;
-  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'body' | 'body-lg' | 'caption' | 'button';
+  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'body' | 'body-lg' | 'caption' | 'button' | 'small';
   color?: 'dark' | 'medium' | 'light' | 'primary' | 'success' | 'warning' | 'accent' | 'white';
   className?: string;
 }
@@ -25,7 +25,8 @@ const Typography: React.FC<TypographyProps> = ({
     'body-lg': 'text-xl leading-relaxed',
     body: 'text-base leading-relaxed',
     caption: 'text-sm',
-    button: 'text-base font-semibold'
+    button: 'text-base font-semibold',
+    small: 'text-xs'
   };
 
   const getColorClasses = () => {

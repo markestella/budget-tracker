@@ -27,17 +27,17 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   const getIconColors = () => {
     if (isDark) {
       return {
-        primary: 'text-blue-400',
-        success: 'text-green-400',
-        warning: 'text-orange-400',
-        accent: 'text-purple-400'
+        primary: 'text-white [&_svg]:text-white [&_svg]:stroke-white',
+        success: 'text-white [&_svg]:text-white [&_svg]:stroke-white',
+        warning: 'text-white [&_svg]:text-white [&_svg]:stroke-white',
+        accent: 'text-white [&_svg]:text-white [&_svg]:stroke-white'
       };
     } else {
       return {
-        primary: 'text-blue-600',
-        success: 'text-green-600',
-        warning: 'text-orange-600',
-        accent: 'text-purple-600'
+        primary: 'text-black [&_svg]:text-black [&_svg]:stroke-black',
+        success: 'text-black [&_svg]:text-black [&_svg]:stroke-black',
+        warning: 'text-black [&_svg]:text-black [&_svg]:stroke-black',
+        accent: 'text-black [&_svg]:text-black [&_svg]:stroke-black'
       };
     }
   };
