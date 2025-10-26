@@ -1,7 +1,9 @@
 'use client';
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Section from "../components/ui/Section";
 import { useTheme } from "../components/ThemeProvider";
 import Typography from "../components/ui/Typography";
@@ -14,6 +16,15 @@ import ThemeToggle from "../components/ThemeToggle";
 
 export default function Home() {
   const { isDark } = useTheme();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/dashboard');
+    }
+  }, [status, session, router]);
   const pricingPlans = [
     {
       name: "Free",
