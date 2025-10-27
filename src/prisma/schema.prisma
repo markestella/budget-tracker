@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   name          String?
   password      String
   emailVerified DateTime?
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  accounts Account[]
-  sessions Session[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  accounts      Account[]
+  incomeRecords IncomeRecord[]
+  incomeSources IncomeSource[]
+  sessions      Session[]
 
   @@map("users")
 }
@@ -32,15 +30,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -63,4 +60,80 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verificationtokens")
+}
+
+model IncomeSource {
+  id            String           @id @default(cuid())
+  userId        String
+  name          String
+  category      IncomeCategory
+  description   String?
+  frequency     PaymentFrequency
+  amount        Decimal          @db.Decimal(10, 2)
+  // Advanced scheduling fields
+  scheduleDays       Int[]            @default([]) // For monthly: [15, 30] or [31] for last day, etc.
+  scheduleWeekday    Int?             // For weekly/bi-weekly: 0=Sunday, 1=Monday, etc.
+  scheduleWeek       ScheduleWeek?    // For bi-weekly: 'FIRST', 'SECOND', 'THIRD', 'FOURTH'
+  scheduleTime       String?          // Time of day (HH:MM format)
+  nextPaymentDate    DateTime?        // Auto-calculated next payment
+  useManualAmounts   Boolean          @default(false) // Whether to use manual amounts per day
+  scheduleDayAmounts Json?            // Manual amounts per day: {15: 30000, 30: 30000}
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  incomeRecords IncomeRecord[]
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("income_sources")
+}
+
+model IncomeRecord {
+  id             String        @id @default(cuid())
+  userId         String
+  incomeSourceId String
+  expectedDate   DateTime
+  actualAmount   Decimal?      @db.Decimal(10, 2)
+  actualDate     DateTime?
+  status         PaymentStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  incomeSource   IncomeSource  @relation(fields: [incomeSourceId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("income_records")
+}
+
+enum IncomeCategory {
+  SALARY
+  FREELANCE
+  BUSINESS
+  INVESTMENT
+  RENTAL
+  PENSION
+  BENEFITS
+  OTHER
+}
+
+enum PaymentFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  ONE_TIME
+}
+
+enum PaymentStatus {
+  PENDING
+  RECEIVED
+  OVERDUE
+}
+
+enum ScheduleWeek {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  LAST
 }
