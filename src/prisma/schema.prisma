@@ -22,6 +22,8 @@ model User {
   incomeSources      IncomeSource[]
   sessions           Session[]
   financialAccounts  FinancialAccount[]
+  expenses           Expense[]
+  budgets            Budget[]
 
   @@map("users")
 }
@@ -165,6 +167,37 @@ model FinancialAccount {
   user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("financial_accounts")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Decimal  @db.Decimal(10,2)
+  category    String
+  description String?
+  expenseDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expenseDate])
+  @@index([userId, category])
+  @@map("expenses")
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String?
+  totalAmount Decimal  @db.Decimal(10,2)
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
+  @@map("budgets")
 }
 
 enum FinancialAccountType {
