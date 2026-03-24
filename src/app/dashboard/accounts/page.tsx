@@ -1,145 +1,361 @@
 'use client';
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Typography from '@/components/ui/Typography';
 import { useTheme } from '@/components/ThemeProvider';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import Typography from '@/components/ui/Typography';
+import { AccountCard } from '@/components/accounts/AccountCard';
+import { AccountForm } from '@/components/accounts/AccountForm';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
-const AccountsPage: React.FC = () => {
+interface AccountSummary {
+  totalLiquidAssets: number;
+  totalCreditLimit: number;
+  totalCreditBalance: number;
+  totalAvailableCredit: number;
+  totalCreditUtilization: number;
+  accountCounts: {
+    savings: number;
+    checking: number;
+    creditCards: number;
+    debitCards: number;
+  };
+  alerts: any[];
+}
+
+interface Account {
+  id: string;
+  accountType: string;
+  bankName: string;
+  accountName: string;
+  accountNumber?: string;
+  currentBalance: number;
+  interestRate?: number;
+  status: string;
+  expiryDate?: string;
+  cutoffDate?: number;
+  statementDate?: number;
+  creditLimit?: number;
+  minimumPaymentDue?: number;
+  paymentDueDate?: string;
+  calculations?: {
+    availableCredit?: number;
+    utilizationRate?: number;
+  };
+}
+
+export default function AccountsPage() {
   const { isDark } = useTheme();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [accountsRes, summaryRes] = await Promise.all([
+        fetch('/api/accounts', { credentials: 'include' }),
+        fetch('/api/accounts/dashboard', { credentials: 'include' })
+      ]);
+
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        setAccounts(accountsData);
+      }
+
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setSummary(summaryData);
+      }
+    } catch (error) {
+      console.error('Error fetching accounts data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAccountSubmit = async (accountData: Omit<Account, 'id' | 'calculations'>) => {
+    try {
+      const url = editingAccount 
+        ? `/api/accounts/${editingAccount.id}` 
+        : '/api/accounts';
+      
+      const method = editingAccount ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(accountData),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        await fetchData();
+        setShowAccountForm(false);
+        setEditingAccount(null);
+      }
+    } catch (error) {
+      console.error('Error saving account:', error);
+    }
+  };
+
+  const handleAccountDelete = (account: Account) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Account',
+      message: `Are you sure you want to delete "${account.accountName}" (${account.bankName})? This action cannot be undone.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/accounts/${account.id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+          });
+
+          if (response.ok) {
+            await fetchData();
+          }
+        } catch (error) {
+          console.error('Error deleting account:', error);
+        }
+      }
+    });
+  };
+
+  const getAlertIcon = (severity: string) => {
+    switch (severity) {
+      case 'danger': return '🚨';
+      case 'warning': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📢';
+    }
+  };
+
+  const getAlertColor = (severity: string) => {
+    if (isDark) {
+      switch (severity) {
+        case 'danger': return 'text-red-400 bg-red-900/20 border-red-800';
+        case 'warning': return 'text-yellow-400 bg-yellow-900/20 border-yellow-800';
+        case 'info': return 'text-blue-400 bg-blue-900/20 border-blue-800';
+        default: return 'text-gray-400 bg-gray-800/20 border-gray-700';
+      }
+    } else {
+      switch (severity) {
+        case 'danger': return 'text-red-700 bg-red-50 border-red-200';
+        case 'warning': return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+        case 'info': return 'text-blue-700 bg-blue-50 border-blue-200';
+        default: return 'text-gray-700 bg-gray-50 border-gray-200';
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8">
+          <div className="max-w-7xl mx-auto">
+            <Typography variant="h1" color="dark" className="text-center">
+              Loading accounts...
+            </Typography>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center justify-between">
             <div>
-              <Typography variant="h2" color="dark" className="mb-2">
+              <Typography variant="h1" color="dark" className="mb-2">
                 Accounts & Cards
               </Typography>
               <Typography variant="body" color="medium">
-                Manage your bank accounts and credit cards
+                Manage your financial accounts, track balances, and monitor credit utilization
               </Typography>
             </div>
-            <Button variant="primary">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setEditingAccount(null);
+                setShowAccountForm(true);
+              }}
+            >
               Add Account
             </Button>
           </div>
 
-          {/* Account Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Total Assets
-              </Typography>
-              <Typography variant="h2" color="success" className="mb-2">
-                ₱127,350.00
-              </Typography>
-              <Typography variant="caption" color="success">
-                Across all accounts
-              </Typography>
-            </Card>
+          {/* Summary Stats */}
+          {summary && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="p-6">
+                <Typography variant="caption" color="medium" className="mb-2">
+                  Liquid Assets
+                </Typography>
+                <Typography variant="h2" color="primary" className="mb-2">
+                  {formatCurrency(summary.totalLiquidAssets)}
+                </Typography>
+                <Typography variant="caption" color="medium">
+                  {summary.accountCounts.savings + summary.accountCounts.checking} accounts
+                </Typography>
+              </Card>
 
+              <Card className="p-6">
+                <Typography variant="caption" color="medium" className="mb-2">
+                  Available Credit
+                </Typography>
+                <Typography variant="h2" color="success" className="mb-2">
+                  {formatCurrency(summary.totalAvailableCredit)}
+                </Typography>
+                <Typography variant="caption" color="medium">
+                  {summary.accountCounts.creditCards} credit cards
+                </Typography>
+              </Card>
+
+              <Card className="p-6">
+                <Typography variant="caption" color="medium" className="mb-2">
+                  Credit Utilization
+                </Typography>
+                <Typography 
+                  variant="h2" 
+                  color={summary.totalCreditUtilization > 70 ? "warning" : summary.totalCreditUtilization > 30 ? "medium" : "success"}
+                  className="mb-2"
+                >
+                  {summary.totalCreditUtilization.toFixed(1)}%
+                </Typography>
+                <Typography variant="caption" color="medium">
+                  {formatCurrency(summary.totalCreditBalance)} of {formatCurrency(summary.totalCreditLimit)}
+                </Typography>
+              </Card>
+
+              <Card className="p-6">
+                <Typography variant="caption" color="medium" className="mb-2">
+                  Total Accounts
+                </Typography>
+                <Typography variant="h2" color="dark" className="mb-2">
+                  {Object.values(summary.accountCounts).reduce((a, b) => a + b, 0)}
+                </Typography>
+                <Typography variant="caption" color="medium">
+                  {summary.alerts.length} alerts
+                </Typography>
+              </Card>
+            </div>
+          )}
+
+          {/* Alerts */}
+          {summary && summary.alerts.length > 0 && (
             <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Credit Used
+              <Typography variant="h3" color="dark" className="mb-4">
+                Alerts & Notifications
               </Typography>
-              <Typography variant="h2" color="warning" className="mb-2">
-                ₱15,200.00
-              </Typography>
-              <Typography variant="caption" color="medium">
-                28% of available credit
-              </Typography>
+              <div className="space-y-3">
+                {summary.alerts.map((alert, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${getAlertColor(alert.severity)}`}
+                  >
+                    <span className="text-lg">{getAlertIcon(alert.severity)}</span>
+                    <Typography variant="body" className="flex-1">
+                      {alert.message}
+                    </Typography>
+                  </div>
+                ))}
+              </div>
             </Card>
+          )}
+
+          {/* Accounts Grid */}
+          <div className="space-y-6">
+            <Typography variant="h2" color="dark">
+              Your Accounts
+            </Typography>
+            
+            {accounts.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Typography variant="h3" color="medium" className="mb-4">
+                  No accounts found
+                </Typography>
+                <Typography variant="body" color="medium" className="mb-6">
+                  Start by adding your first financial account to track balances and manage your finances.
+                </Typography>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingAccount(null);
+                    setShowAccountForm(true);
+                  }}
+                >
+                  Add Your First Account
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {accounts.map((account) => (
+                  <AccountCard
+                    key={account.id}
+                    account={account}
+                    onEdit={(account: Account) => {
+                      setEditingAccount(account);
+                      setShowAccountForm(true);
+                    }}
+                    onDelete={handleAccountDelete}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-
-          {/* Bank Accounts */}
-          <Card className="p-6 mb-6">
-            <Typography variant="h3" color="dark" className="mb-6">
-              Bank Accounts
-            </Typography>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { name: 'BPI Savings Account', number: '•••• 1234', balance: '₱85,420.00', type: 'Savings' },
-                { name: 'BDO Checking Account', number: '•••• 5678', balance: '₱32,180.00', type: 'Checking' },
-                { name: 'Metrobank Time Deposit', number: '•••• 9012', balance: '₱9,750.00', type: 'Time Deposit' },
-              ].map((account, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${
-                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <Typography variant="body" color="dark" className="font-medium">
-                        {account.name}
-                      </Typography>
-                      <Typography variant="caption" color="medium">
-                        {account.number} • {account.type}
-                      </Typography>
-                    </div>
-                    <Typography variant="body" color="success" className="font-semibold">
-                      {account.balance}
-                    </Typography>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Credit Cards */}
-          <Card className="p-6">
-            <Typography variant="h3" color="dark" className="mb-6">
-              Credit Cards
-            </Typography>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { name: 'BPI Gold Mastercard', number: '•••• 3456', used: '₱12,500.00', limit: '₱50,000.00', utilization: 25 },
-                { name: 'Citi Rewards Visa', number: '•••• 7890', used: '₱2,700.00', limit: '₱30,000.00', utilization: 9 },
-              ].map((card, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${
-                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <Typography variant="body" color="dark" className="font-medium">
-                        {card.name}
-                      </Typography>
-                      <Typography variant="caption" color="medium">
-                        {card.number}
-                      </Typography>
-                    </div>
-                    <Typography variant="caption" color={card.utilization > 30 ? 'warning' : 'medium'}>
-                      {card.utilization}% used
-                    </Typography>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Used:</span>
-                      <span className={isDark ? 'text-gray-200' : 'text-gray-900'}>{card.used}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Limit:</span>
-                      <span className={isDark ? 'text-gray-200' : 'text-gray-900'}>{card.limit}</span>
-                    </div>
-                    <div className={`w-full h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div 
-                        className={`h-full rounded-full ${
-                          card.utilization > 30 ? 'bg-orange-500' : 'bg-blue-500'
-                        }`}
-                        style={{ width: `${card.utilization}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
         </div>
+
+        {/* Account Form Modal */}
+        {showAccountForm && (
+          <AccountForm
+            account={editingAccount}
+            onSubmit={handleAccountSubmit}
+            onCancel={() => {
+              setShowAccountForm(false);
+              setEditingAccount(null);
+            }}
+          />
+        )}
+
+        {/* Confirm Modal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          isDestructive={confirmModal.isDestructive}
+          onConfirm={() => {
+            confirmModal.onConfirm();
+            setConfirmModal({ ...confirmModal, isOpen: false });
+          }}
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        />
       </div>
     </DashboardLayout>
   );
-};
-
-export default AccountsPage;
+}

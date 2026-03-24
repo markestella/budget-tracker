@@ -8,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  password      String
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accounts      Account[]
-  incomeRecords IncomeRecord[]
-  incomeSources IncomeSource[]
-  sessions      Session[]
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  name               String?
+  password           String
+  emailVerified      DateTime?
+  image              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  accounts           Account[]
+  incomeRecords      IncomeRecord[]
+  incomeSources      IncomeSource[]
+  sessions           Session[]
+  financialAccounts  FinancialAccount[]
 
   @@map("users")
 }
@@ -136,4 +137,44 @@ enum ScheduleWeek {
   THIRD
   FOURTH
   LAST
+}
+
+model FinancialAccount {
+  id                  String                  @id @default(cuid())
+  userId              String
+  accountType         FinancialAccountType
+  bankName            String
+  accountName         String
+  accountNumber       String?                 // Last 4 digits for display
+  currentBalance      Decimal                 @db.Decimal(10,2)
+  interestRate        Decimal?                @db.Decimal(5,4) // APY for savings, APR for credit
+  status              AccountStatus           @default(ACTIVE)
+  
+  // Credit Card specific fields
+  expiryDate          String?                 // MM/YY format
+  cutoffDate          Int?                    // Day of month (1-31)
+  statementDate       Int?                    // Auto-calculated: cutoff + 20 days
+  creditLimit         Decimal?                @db.Decimal(10,2)
+  minimumPaymentDue   Decimal?                @db.Decimal(10,2)
+  paymentDueDate      DateTime?
+  
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("financial_accounts")
+}
+
+enum FinancialAccountType {
+  SAVINGS
+  CHECKING
+  CREDIT_CARD
+  DEBIT_CARD
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
 }
