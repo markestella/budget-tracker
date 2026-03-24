@@ -16,6 +16,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 type IncomeCategory = 'SALARY' | 'FREELANCE' | 'BUSINESS' | 'INVESTMENT' | 'RENTAL' | 'PENSION' | 'BENEFITS' | 'OTHER';
 type PaymentFrequency = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'ONE_TIME';
 type PaymentStatus = 'PENDING' | 'RECEIVED' | 'OVERDUE';
+type ActiveTab = 'overview' | 'sources' | 'records';
 
 interface IncomeSource {
   id: string;
@@ -67,7 +68,10 @@ interface IncomeCalculations {
     id: string;
     expectedDate: string;
     expectedAmount: number;
+    incomeSourceId?: string;
+    status?: PaymentStatus;
     incomeSource: {
+      id?: string;
       name: string;
       category: IncomeCategory;
       amount: number;
@@ -78,8 +82,8 @@ interface IncomeCalculations {
 
 const IncomePage: React.FC = () => {
   const { isDark } = useTheme();
-  const { data: session, status } = useSession();
-  const [activeTab, setActiveTab] = useState<'overview' | 'sources' | 'records'>('overview');
+  const { status } = useSession();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   
   // State for sources
   const [sources, setSources] = useState<IncomeSource[]>([]);
@@ -219,7 +223,7 @@ const IncomePage: React.FC = () => {
 
 
   // Quick actions for pending payments
-  const handleQuickReceived = async (payment: any) => {
+  const handleQuickReceived = async (payment: IncomeCalculations['upcomingPayments'][number]) => {
     try {
       const incomeSourceId = payment.incomeSource?.id || payment.incomeSourceId;
       
@@ -256,7 +260,7 @@ const IncomePage: React.FC = () => {
     }
   };
 
-  const handleQuickNotYet = async (payment: any) => {
+  const handleQuickNotYet = async (payment: IncomeCalculations['upcomingPayments'][number]) => {
     try {
       const incomeSourceId = payment.incomeSource?.id || payment.incomeSourceId;
       
@@ -294,8 +298,7 @@ const IncomePage: React.FC = () => {
 
 
   // Handle record operations
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRecordSubmit = async (recordData: any) => {
+  const handleRecordSubmit = async (recordData: Omit<IncomeRecord, 'id' | 'incomeSource'>) => {
     try {
       const url = editingRecord 
         ? `/api/income/records/${editingRecord.id}` 
@@ -333,6 +336,12 @@ const IncomePage: React.FC = () => {
       day: 'numeric',
     });
   };
+
+  const tabs: Array<{ id: ActiveTab; label: string; icon: string }> = [
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'sources', label: 'Income Sources', icon: '💼' },
+    { id: 'records', label: 'Payment Records', icon: '📋' },
+  ];
 
   if (status === 'loading') {
     return <DashboardLayout><div className="p-8">Loading...</div></DashboardLayout>;
@@ -387,15 +396,10 @@ const IncomePage: React.FC = () => {
           <div className="mb-8">
             <div className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <nav className="-mb-px flex space-x-8">
-                {[
-                  { id: 'overview', label: 'Overview', icon: '📊' },
-                  { id: 'sources', label: 'Income Sources', icon: '💼' },
-                  { id: 'records', label: 'Payment Records', icon: '📋' },
-                ].map((tab) => (
+                {tabs.map((tab) => (
                   <button
                     key={tab.id}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                       activeTab === tab.id
                         ? isDark
@@ -484,7 +488,7 @@ const IncomePage: React.FC = () => {
                         // Show payments that are overdue, due today, or due within 2 weeks
                         // But exclude payments that have been marked as received or overdue (not pending anymore)
                         const isWithinTimeframe = diffDays <= 14;
-                        const isPending = !(payment as any).status || (payment as any).status === 'PENDING';
+                        const isPending = !payment.status || payment.status === 'PENDING';
                         return isWithinTimeframe && isPending;
                       })
                       .slice(0, 5)
@@ -496,9 +500,6 @@ const IncomePage: React.FC = () => {
                         const isOverdue = diffDays < 0;
                         const isDueToday = diffDays === 0;
                         const isDueSoon = diffDays <= 3 && diffDays > 0; // Due within 3 days
-                        const isDueThisWeek = diffDays <= 7 && diffDays > 3; // Due within a week
-                        const isDueLater = diffDays > 7; // Due later (within 2 weeks)
-                        
                         return (
                           <div key={payment.id} className={`flex items-center justify-between p-4 rounded-lg ${
                             isDark ? 'bg-gray-800' : 'bg-gray-50'
@@ -582,7 +583,7 @@ const IncomePage: React.FC = () => {
                     const diffTime = paymentDate.getTime() - today.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     const isWithinTimeframe = diffDays <= 14;
-                    const isPending = !(payment as any).status || (payment as any).status === 'PENDING';
+                    const isPending = !payment.status || payment.status === 'PENDING';
                     return isWithinTimeframe && isPending;
                   }).length === 0 && (
                     <Typography variant="body" color="medium" className="text-center py-4">
@@ -698,7 +699,7 @@ const IncomePage: React.FC = () => {
                       }}
                       onDelete={handleSourceDelete}
                       onToggleActive={handleToggleActive}
-                      onViewRecords={(source) => {
+                      onViewRecords={() => {
                         setActiveTab('records');
                       }}
                     />

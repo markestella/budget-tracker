@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PaymentCalculator } from '@/lib/paymentCalculator';
 
+type CalculatorFrequency = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'ONE_TIME';
+type CalculatorScheduleWeek = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'LAST';
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -304,7 +307,7 @@ export async function GET(request: Request) {
     // Only include PENDING records in notifications, but use all records for filtering
     const formattedExistingPayments = existingRecords
       .filter(record => record.status === 'PENDING')
-      .map((record: any) => {
+      .map((record) => {
       // Calculate expected amount by generating upcoming payments for this source
       // and finding the matching date
       let scheduleDayAmounts = {};
@@ -315,10 +318,10 @@ export async function GET(request: Request) {
       // Generate upcoming payments for this specific source to find the correct amount
       const sourceUpcoming = PaymentCalculator.getUpcomingPayments(
         {
-          frequency: record.incomeSource.frequency as any,
+          frequency: record.incomeSource.frequency as CalculatorFrequency,
           scheduleDays: record.incomeSource.scheduleDays || undefined,
           scheduleWeekday: record.incomeSource.scheduleWeekday || undefined,
-          scheduleWeek: record.incomeSource.scheduleWeek || undefined,
+          scheduleWeek: (record.incomeSource.scheduleWeek || undefined) as CalculatorScheduleWeek | undefined,
           scheduleTime: record.incomeSource.scheduleTime || undefined,
           amount: parseFloat(record.incomeSource.amount.toString()),
           useManualAmounts: record.incomeSource.useManualAmounts || false,
@@ -349,7 +352,7 @@ export async function GET(request: Request) {
         },
         isExistingRecord: true
       };
-    }).filter((payment: any) => 
+    }).filter((payment) => 
       // Filter out payments with invalid amounts
       payment.expectedAmount > 0 && 
       !isNaN(payment.expectedAmount) && 
@@ -358,7 +361,7 @@ export async function GET(request: Request) {
 
     // Filter out calculated payments that have corresponding database records (any status)
     const existingDates = new Set(
-      existingRecords.map((p: any) => p.expectedDate.toDateString())
+      existingRecords.map((record) => record.expectedDate.toDateString())
     );
 
     const filteredCalculatedPayments = sortedUpcomingPayments.filter(

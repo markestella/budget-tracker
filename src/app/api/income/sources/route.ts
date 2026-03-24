@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { Prisma } from '@prisma/client';
+import { jsonResponse, validateRequest } from '@/lib/api-utils';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { incomeSourceSchema } from '@/lib/validations/income';
 
 export async function GET() {
   try {
@@ -61,58 +64,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { 
-      name, 
-      category, 
-      description, 
-      frequency, 
+    const body = await request.json().catch(() => null);
+    const validation = validateRequest(incomeSourceSchema, body);
+
+    if ('error' in validation) {
+      return validation.error;
+    }
+
+    const {
       amount,
+      category,
+      description,
+      frequency,
+      name,
+      scheduleDayAmounts,
       scheduleDays,
-      scheduleWeekday,
-      scheduleWeek,
       scheduleTime,
+      scheduleWeek,
+      scheduleWeekday,
       useManualAmounts,
-      scheduleDayAmounts
-    } = await request.json();
-
-    // Validate input
-    if (!name || !category || !frequency || !amount) {
-      return NextResponse.json(
-        { error: 'Name, category, frequency, and amount are required' },
-        { status: 400 }
-      );
-    }
-
-    if (amount <= 0) {
-      return NextResponse.json(
-        { error: 'Amount must be greater than 0' },
-        { status: 400 }
-      );
-    }
-
-    // Validate scheduling fields based on frequency
-    if (frequency !== 'ONE_TIME') {
-      if (frequency === 'MONTHLY' && (!scheduleDays || scheduleDays.length === 0)) {
-        return NextResponse.json(
-          { error: 'Monthly payments require at least one scheduled day' },
-          { status: 400 }
-        );
-      }
-
-      if ((frequency === 'WEEKLY' || frequency === 'BIWEEKLY') && scheduleWeekday === undefined) {
-        return NextResponse.json(
-          { error: 'Weekly and bi-weekly payments require a scheduled weekday' },
-          { status: 400 }
-        );
-      }
-
-      if (frequency === 'BIWEEKLY' && !scheduleWeek) {
-        return NextResponse.json(
-          { error: 'Bi-weekly payments require a scheduled week of the month' },
-          { status: 400 }
-        );
-      }
-    }
+    } = validation.data;
 
     const incomeSource = await prisma.incomeSource.create({
       data: {
@@ -121,13 +92,13 @@ export async function POST(request: Request) {
         category,
         description,
         frequency,
-        amount: parseFloat(amount),
-        scheduleDays: scheduleDays || null,
+        amount,
+        scheduleDays: scheduleDays ?? [],
         scheduleWeekday: scheduleWeekday !== undefined ? scheduleWeekday : null,
-        scheduleWeek: scheduleWeek || null,
-        scheduleTime: scheduleTime || null,
-        useManualAmounts: useManualAmounts || false,
-        scheduleDayAmounts: scheduleDayAmounts || null,
+        scheduleWeek: scheduleWeek ?? null,
+        scheduleTime: scheduleTime ?? null,
+        useManualAmounts: useManualAmounts ?? false,
+        scheduleDayAmounts: scheduleDayAmounts ?? Prisma.JsonNull,
       },
       include: {
         _count: {
@@ -138,10 +109,10 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(incomeSource, { status: 201 });
+    return jsonResponse(incomeSource, { status: 201 });
   } catch (error) {
     console.error('Error creating income source:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );

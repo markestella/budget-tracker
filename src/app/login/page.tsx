@@ -154,7 +154,7 @@ const LoginPage: React.FC = () => {
                 <span className={`px-2 ${
                   isDark ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'
                 }`}>
-                  Don't have an account?
+                  Don&apos;t have an account?
                 </span>
               </div>
             </div>

@@ -10,6 +10,11 @@ services:
       POSTGRES_PASSWORD: budget_tracker_password
     ports:
       - "15436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget_tracker -d budget_tracker_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { jsonResponse, validateRequest } from '@/lib/api-utils';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { financialAccountUpdateSchema } from '@/lib/validations/accounts';
 
 // GET specific financial account
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -26,7 +29,7 @@ export async function GET(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const account = await (prisma as any).financialAccount.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     });
@@ -48,9 +51,10 @@ export async function GET(
 // PUT update financial account
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -65,41 +69,48 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    const validation = validateRequest(financialAccountUpdateSchema, body);
+
+    if ('error' in validation) {
+      return validation.error;
+    }
+
+    const data = validation.data;
     
     // Calculate statement date for credit cards
-    let statementDate = body.statementDate;
-    if (body.accountType === 'CREDIT_CARD' && body.cutoffDate) {
-      statementDate = calculateStatementDate(body.cutoffDate);
+    let statementDate = null;
+    if (data.accountType === 'CREDIT_CARD' && data.cutoffDate) {
+      statementDate = calculateStatementDate(data.cutoffDate);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const account = await (prisma as any).financialAccount.update({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
       data: {
-        accountType: body.accountType,
-        bankName: body.bankName,
-        accountName: body.accountName,
-        accountNumber: body.accountNumber || null,
-        currentBalance: body.currentBalance,
-        interestRate: body.interestRate || null,
-        status: body.status,
-        expiryDate: body.expiryDate || null,
-        cutoffDate: body.cutoffDate || null,
+        accountType: data.accountType,
+        bankName: data.bankName,
+        accountName: data.accountName,
+        accountNumber: data.accountNumber ?? null,
+        currentBalance: data.currentBalance,
+        interestRate: data.interestRate ?? null,
+        status: data.status ?? 'ACTIVE',
+        expiryDate: data.expiryDate ?? null,
+        cutoffDate: data.cutoffDate ?? null,
         statementDate,
-        creditLimit: body.creditLimit || null,
-        minimumPaymentDue: body.minimumPaymentDue || null,
-        paymentDueDate: body.paymentDueDate ? new Date(body.paymentDueDate) : null,
+        creditLimit: data.creditLimit ?? null,
+        minimumPaymentDue: data.minimumPaymentDue ?? null,
+        paymentDueDate: data.paymentDueDate ? new Date(data.paymentDueDate) : null,
       },
     });
 
-    return NextResponse.json(account);
+    return jsonResponse(account);
   } catch (error) {
     console.error('Error updating account:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to update account' },
       { status: 500 }
     );
@@ -109,9 +120,10 @@ export async function PUT(
 // DELETE financial account
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -129,7 +141,7 @@ export async function DELETE(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (prisma as any).financialAccount.delete({
       where: {
-        id: params.id,
+        id,
         userId: user.id,
       },
     });

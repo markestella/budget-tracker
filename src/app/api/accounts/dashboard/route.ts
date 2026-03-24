@@ -3,6 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+interface DashboardAccount {
+  id: string;
+  accountName: string;
+  accountType: 'SAVINGS' | 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD';
+  creditLimit: { toString(): string } | null;
+  currentBalance: { toString(): string };
+  expiryDate: string | null;
+  paymentDueDate: Date | null;
+}
+
+interface AccountAlert {
+  accountId: string;
+  accountName: string;
+  message: string;
+  severity: 'info' | 'warning' | 'danger';
+  type: 'low_balance' | 'high_utilization' | 'card_expiry' | 'payment_due';
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +43,7 @@ export async function GET() {
         userId: user.id,
         status: 'ACTIVE' 
       },
-    });
+    }) as DashboardAccount[];
 
     // Calculate totals and statistics
     let totalLiquidAssets = 0;
@@ -33,10 +51,10 @@ export async function GET() {
     let totalCreditBalance = 0;
     let totalAvailableCredit = 0;
     
-    const alerts: any[] = [];
+    const alerts: AccountAlert[] = [];
     const currentDate = new Date();
     
-    accounts.forEach((account: any) => {
+    accounts.forEach((account) => {
       const currentBalance = parseFloat(account.currentBalance.toString());
       
       if (account.accountType === 'SAVINGS' || account.accountType === 'CHECKING') {
@@ -118,10 +136,10 @@ export async function GET() {
       totalAvailableCredit,
       totalCreditUtilization,
       accountCounts: {
-        savings: accounts.filter((a: any) => a.accountType === 'SAVINGS').length,
-        checking: accounts.filter((a: any) => a.accountType === 'CHECKING').length,
-        creditCards: accounts.filter((a: any) => a.accountType === 'CREDIT_CARD').length,
-        debitCards: accounts.filter((a: any) => a.accountType === 'DEBIT_CARD').length,
+        savings: accounts.filter((account) => account.accountType === 'SAVINGS').length,
+        checking: accounts.filter((account) => account.accountType === 'CHECKING').length,
+        creditCards: accounts.filter((account) => account.accountType === 'CREDIT_CARD').length,
+        debitCards: accounts.filter((account) => account.accountType === 'DEBIT_CARD').length,
       },
       alerts,
     };

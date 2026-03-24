@@ -32,7 +32,7 @@ const buttonVariants = cva(
 interface ButtonProps
   extends Omit<ButtonPrimitive.Props, 'className'>,
     VariantProps<typeof buttonVariants> {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   isLoading?: boolean;
 }

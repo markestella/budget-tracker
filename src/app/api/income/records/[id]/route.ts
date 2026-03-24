@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { jsonResponse, validateRequest } from '@/lib/api-utils';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { incomeRecordUpdateSchema } from '@/lib/validations/income';
 
 export async function GET(
   request: Request,
@@ -76,15 +78,14 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { expectedDate, actualAmount, actualDate, status, notes } = await request.json();
+    const body = await request.json().catch(() => null);
+    const validation = validateRequest(incomeRecordUpdateSchema, body);
 
-    // Validate status-specific fields
-    if (status === 'RECEIVED' && !actualAmount) {
-      return NextResponse.json(
-        { error: 'Actual amount is required when status is RECEIVED' },
-        { status: 400 }
-      );
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { actualAmount, actualDate, expectedDate, notes, status } = validation.data;
 
     const incomeRecord = await prisma.incomeRecord.updateMany({
       where: {
@@ -95,7 +96,7 @@ export async function PUT(
       },
       data: {
         expectedDate: expectedDate ? new Date(expectedDate) : undefined,
-        actualAmount: actualAmount !== undefined ? (actualAmount ? parseFloat(actualAmount) : null) : undefined,
+        actualAmount: actualAmount !== undefined ? actualAmount : undefined,
         actualDate: actualDate !== undefined ? (actualDate ? new Date(actualDate) : null) : undefined,
         status: status || undefined,
         notes: notes !== undefined ? notes : undefined,
@@ -120,10 +121,10 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(updatedRecord);
+    return jsonResponse(updatedRecord);
   } catch (error) {
     console.error('Error updating income record:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );

@@ -1,9 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import Button from '@/components/ui/Button';
 import Typography from '@/components/ui/Typography';
+
+const getInitialFormData = (account: Account | null) => ({
+  accountType: account?.accountType || 'SAVINGS',
+  bankName: account?.bankName || '',
+  accountName: account?.accountName || '',
+  accountNumber: account?.accountNumber || '',
+  currentBalance: account?.currentBalance || 0,
+  interestRate: account?.interestRate || 0,
+  status: account?.status || 'ACTIVE',
+  expiryDate: account?.expiryDate || '',
+  cutoffDate: account?.cutoffDate || 1,
+  creditLimit: account?.creditLimit || 0,
+  minimumPaymentDue: account?.minimumPaymentDue || 0,
+  paymentDueDate: account?.paymentDueDate ? account.paymentDueDate.split('T')[0] : '',
+});
+
+type FormData = ReturnType<typeof getInitialFormData>;
 
 interface Account {
   id: string;
@@ -30,43 +47,19 @@ interface AccountFormProps {
 
 export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
   const { isDark } = useTheme();
-  const [formData, setFormData] = useState({
-    accountType: 'SAVINGS',
-    bankName: '',
-    accountName: '',
-    accountNumber: '',
-    currentBalance: 0,
-    interestRate: 0,
-    status: 'ACTIVE',
-    expiryDate: '',
-    cutoffDate: 1,
-    creditLimit: 0,
-    minimumPaymentDue: 0,
-    paymentDueDate: '',
-  });
+  const [formData, setFormData] = useState<FormData>(() => getInitialFormData(account));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (account) {
-      setFormData({
-        accountType: account.accountType,
-        bankName: account.bankName,
-        accountName: account.accountName,
-        accountNumber: account.accountNumber || '',
-        currentBalance: account.currentBalance,
-        interestRate: account.interestRate || 0,
-        status: account.status,
-        expiryDate: account.expiryDate || '',
-        cutoffDate: account.cutoffDate || 1,
-        creditLimit: account.creditLimit || 0,
-        minimumPaymentDue: account.minimumPaymentDue || 0,
-        paymentDueDate: account.paymentDueDate ? account.paymentDueDate.split('T')[0] : '',
-      });
-    }
+    const frame = window.requestAnimationFrame(() => {
+      setFormData(getInitialFormData(account));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [account]);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));

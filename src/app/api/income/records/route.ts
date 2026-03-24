@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { jsonResponse, validateRequest } from '@/lib/api-utils';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { incomeRecordSchema } from '@/lib/validations/income';
 
 export async function GET(request: Request) {
   try {
@@ -102,15 +104,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { incomeSourceId, expectedDate, actualAmount, actualDate, status, notes } = await request.json();
+    const body = await request.json().catch(() => null);
+    const validation = validateRequest(incomeRecordSchema, body);
 
-    // Validate required fields
-    if (!incomeSourceId || !expectedDate) {
-      return NextResponse.json(
-        { error: 'Income source ID and expected date are required' },
-        { status: 400 }
-      );
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { actualAmount, actualDate, expectedDate, incomeSourceId, notes, status } = validation.data;
 
     // Verify the income source belongs to the user
     const incomeSource = await prisma.incomeSource.findFirst({
@@ -124,22 +125,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Income source not found' }, { status: 404 });
     }
 
-    // Validate status-specific fields
-    if (status === 'RECEIVED' && !actualAmount) {
-      return NextResponse.json(
-        { error: 'Actual amount is required when status is RECEIVED' },
-        { status: 400 }
-      );
-    }
-
     const incomeRecord = await prisma.incomeRecord.create({
       data: {
         userId: user.id,
         incomeSourceId,
         expectedDate: new Date(expectedDate),
-        actualAmount: actualAmount ? parseFloat(actualAmount) : null,
+        actualAmount: actualAmount ?? null,
         actualDate: actualDate ? new Date(actualDate) : null,
-        status: status || 'PENDING',
+        status: status ?? 'PENDING',
         notes,
       },
       include: {
@@ -153,10 +146,10 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(incomeRecord, { status: 201 });
+    return jsonResponse(incomeRecord, { status: 201 });
   } catch (error) {
     console.error('Error creating income record:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );

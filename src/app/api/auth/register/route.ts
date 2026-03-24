@@ -1,25 +1,18 @@
-import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { jsonResponse, validateRequest } from '@/lib/api-utils'
 import { prisma } from '@/lib/prisma'
+import { registerSchema } from '@/lib/validations/auth'
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json()
+    const body = await request.json().catch(() => null)
+    const validation = validateRequest(registerSchema, body)
 
-    // Validate input
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+    if ('error' in validation) {
+      return validation.error
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
-        { status: 400 }
-      )
-    }
+    const { name, email, password } = validation.data
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -27,7 +20,7 @@ export async function POST(request: Request) {
     })
 
     if (existingUser) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'User with this email already exists' },
         { status: 400 }
       )
@@ -51,7 +44,7 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(
+    return jsonResponse(
       { 
         message: 'User created successfully',
         user 
@@ -61,7 +54,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Registration error:', error)
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     )

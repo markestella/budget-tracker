@@ -141,7 +141,7 @@ export class PaymentCalculator {
     // Calculate per-payment amount for monthly frequency with multiple days
     const paymentAmount = this.calculatePerPaymentAmount(source);
 
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     
     while (currentDate <= toDate) {
       const paymentDate = this.getNextPaymentDate(source, currentDate);

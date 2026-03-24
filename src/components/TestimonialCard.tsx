@@ -37,7 +37,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       </div>
       
       <Typography variant="body" color="dark" className="mb-6 leading-relaxed">
-        "{quote}"
+        &ldquo;{quote}&rdquo;
       </Typography>
       
       <div className="flex items-center">

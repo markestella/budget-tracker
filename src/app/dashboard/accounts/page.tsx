@@ -10,6 +10,14 @@ import { AccountCard } from '@/components/accounts/AccountCard';
 import { AccountForm } from '@/components/accounts/AccountForm';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
+interface AccountAlert {
+  accountId: string;
+  accountName: string;
+  message: string;
+  severity: 'info' | 'warning' | 'danger';
+  type: 'low_balance' | 'high_utilization' | 'card_expiry' | 'payment_due';
+}
+
 interface AccountSummary {
   totalLiquidAssets: number;
   totalCreditLimit: number;
@@ -22,7 +30,7 @@ interface AccountSummary {
     creditCards: number;
     debitCards: number;
   };
-  alerts: any[];
+  alerts: AccountAlert[];
 }
 
 interface Account {

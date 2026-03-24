@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { jsonResponse, validateRequest } from '@/lib/api-utils';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PaymentRecordGenerator } from '@/lib/paymentRecordGenerator';
+import { generatePaymentsSchema } from '@/lib/validations/income';
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +23,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { daysAhead = 90, action = 'generate' } = body;
+    const validation = validateRequest(generatePaymentsSchema, body);
+
+    if ('error' in validation) {
+      return validation.error;
+    }
+
+    const action = validation.data.action;
+    const daysAhead = validation.data.daysAhead ?? 90;
 
     let result;
 
@@ -47,13 +56,13 @@ export async function POST(request: Request) {
         break;
       
       default:
-        return NextResponse.json(
+        return jsonResponse(
           { error: 'Invalid action. Use "generate", "cleanup", "cleanup-invalid", or "update-dates"' },
           { status: 400 }
         );
     }
 
-    return NextResponse.json({
+    return jsonResponse({
       action,
       success: true,
       ...result
@@ -61,14 +70,14 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error in payment generation API:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
