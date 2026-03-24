@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTheme } from '../ThemeProvider';
+
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { cn } from '@/lib/utils';
 
 interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -17,43 +20,23 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   ...props 
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const { isDark } = useTheme();
-
-  const baseClasses = `
-    w-full px-4 py-3 pr-12 rounded-lg border transition-all duration-200
-    focus:outline-none focus:ring-2
-    ${isDark 
-      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400/20' 
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20'
-    }
-    ${error 
-      ? isDark 
-        ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' 
-        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-      : ''
-    }
-  `;
-
-  const iconColor = isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800';
 
   return (
     <div className="space-y-2">
-      {label && (
-        <label className={`block text-sm font-medium ${
-          isDark ? 'text-gray-200' : 'text-gray-700'
-        }`}>
-          {label}
-        </label>
-      )}
       <div className="relative">
-        <input
+        <Input
           type={showPassword ? 'text' : 'password'}
-          className={`${baseClasses} ${className}`}
+          label={label}
+          error={error}
+          helperText={helperText}
+          className={cn('pr-12', className)}
           {...props}
         />
-        <button
+        <Button
           type="button"
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-colors ${iconColor}`}
+          variant="ghost"
+          size="sm"
+          className="absolute right-1.5 top-[calc(50%-2px)] h-8 px-2 text-muted-foreground hover:text-foreground"
           onClick={() => setShowPassword(!showPassword)}
           tabIndex={-1}
         >
@@ -67,18 +50,8 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           )}
-        </button>
+        </Button>
       </div>
-      {error && (
-        <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-          {error}
-        </p>
-      )}
-      {helperText && !error && (
-        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          {helperText}
-        </p>
-      )}
     </div>
   );
 };

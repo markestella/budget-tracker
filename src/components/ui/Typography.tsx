@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '../ThemeProvider';
+
+import { cn } from '@/lib/utils';
 
 interface TypographyProps {
   children: React.ReactNode;
@@ -16,7 +17,6 @@ const Typography: React.FC<TypographyProps> = ({
   color = 'dark',
   className = '' 
 }) => {
-  const { isDark } = useTheme();
   const variantClasses = {
     h1: 'text-5xl font-bold leading-tight',
     h2: 'text-4xl font-bold',
@@ -29,33 +29,16 @@ const Typography: React.FC<TypographyProps> = ({
     small: 'text-xs'
   };
 
-  const getColorClasses = () => {
-    if (isDark) {
-      return {
-        dark: '!text-gray-100',
-        medium: '!text-gray-300', 
-        light: '!text-gray-400',
-        primary: '!text-blue-400',
-        success: '!text-green-400',
-        warning: '!text-orange-400',
-        accent: '!text-purple-400',
-        white: '!text-white'
-      };
-    } else {
-      return {
-        dark: '!text-gray-900',
-        medium: '!text-gray-700',
-        light: '!text-gray-600',
-        primary: '!text-blue-600',
-        success: '!text-green-600',
-        warning: '!text-orange-600',
-        accent: '!text-purple-600',
-        white: '!text-white'
-      };
-    }
+  const colorClasses = {
+    dark: 'text-foreground',
+    medium: 'text-foreground/80',
+    light: 'text-muted-foreground',
+    primary: 'text-primary',
+    success: 'text-emerald-600 dark:text-emerald-400',
+    warning: 'text-amber-600 dark:text-amber-400',
+    accent: 'text-fuchsia-600 dark:text-fuchsia-400',
+    white: 'text-white'
   };
-
-  const colorClasses = getColorClasses();
 
   const Component = getComponent(variant);
   
@@ -72,7 +55,7 @@ const Typography: React.FC<TypographyProps> = ({
   return React.createElement(
     Component,
     {
-      className: `${variantClasses[variant]} ${colorClasses[color]} ${className}`
+      className: cn(variantClasses[variant], colorClasses[color], className)
     },
     children
   );

@@ -1,63 +1,44 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '../ThemeProvider';
+import { Input as InputPrimitive } from '@base-ui/react/input';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+import { cn } from '@/lib/utils';
+
+interface InputProps extends React.ComponentProps<'input'> {
   label?: string;
   error?: string;
   helperText?: string;
 }
 
-const Input: React.FC<InputProps> = ({ 
-  label, 
-  error, 
-  helperText, 
-  className = '',
-  ...props 
-}) => {
-  const { isDark } = useTheme();
-
-  const baseClasses = `
-    w-full px-4 py-3 rounded-lg border transition-all duration-200
-    focus:outline-none focus:ring-2
-    ${isDark 
-      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400/20' 
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20'
-    }
-    ${error 
-      ? isDark 
-        ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' 
-        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-      : ''
-    }
-  `;
+const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
+  { label, error, helperText, className = '', id, ...props },
+  ref
+) {
+  const inputId = id ?? props.name;
 
   return (
     <div className="space-y-2">
-      {label && (
-        <label className={`block text-sm font-medium ${
-          isDark ? 'text-gray-200' : 'text-gray-700'
-        }`}>
+      {label ? (
+        <label htmlFor={inputId} className="block text-sm font-medium text-foreground/90">
           {label}
         </label>
-      )}
-      <input
-        className={`${baseClasses} ${className}`}
+      ) : null}
+      <InputPrimitive
+        ref={ref}
+        id={inputId}
+        data-slot="input"
+        className={cn(
+          'flex h-11 w-full min-w-0 rounded-lg border border-input bg-background px-4 py-3 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 md:text-sm',
+          error && 'border-destructive focus-visible:ring-destructive/20 dark:border-destructive/70',
+          className
+        )}
         {...props}
       />
-      {error && (
-        <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-          {error}
-        </p>
-      )}
-      {helperText && !error && (
-        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          {helperText}
-        </p>
-      )}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {helperText && !error ? <p className="text-sm text-muted-foreground">{helperText}</p> : null}
     </div>
   );
-};
+});
 
 export default Input;

@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '../ThemeProvider';
+import { CheckIcon, XIcon } from 'lucide-react';
+
+import { Progress, ProgressIndicator, ProgressTrack } from '@/components/ui/progress';
 
 interface PasswordStrengthIndicatorProps {
   password: string;
@@ -39,7 +41,6 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
   password, 
   showDetails = true 
 }) => {
-  const { isDark } = useTheme();
   const { strength, label, color } = getPasswordStrength(password);
 
   if (!password) return null;
@@ -49,9 +50,7 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
       {/* Strength Bar */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className={`text-sm font-medium ${
-            isDark ? 'text-gray-200' : 'text-gray-700'
-          }`}>
+          <span className="text-sm font-medium text-foreground/90">
             Password Strength
           </span>
           <span className={`text-sm font-medium ${
@@ -66,22 +65,17 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
             {label}
           </span>
         </div>
-        <div className={`w-full h-2 rounded-full ${
-          isDark ? 'bg-gray-700' : 'bg-gray-200'
-        }`}>
-          <div 
-            className={`h-full rounded-full transition-all duration-300 ${color}`}
-            style={{ width: `${(strength / 5) * 100}%` }}
-          />
-        </div>
+        <Progress value={(strength / 5) * 100} className="gap-0">
+          <ProgressTrack className="h-2">
+            <ProgressIndicator className={color} />
+          </ProgressTrack>
+        </Progress>
       </div>
 
       {/* Criteria Details */}
       {showDetails && (
         <div className="space-y-2">
-          <p className={`text-sm font-medium ${
-            isDark ? 'text-gray-200' : 'text-gray-700'
-          }`}>
+          <p className="text-sm font-medium text-foreground/90">
             Password Requirements:
           </p>
           <ul className="space-y-1">
@@ -89,36 +83,11 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
               const isPassed = criteria.test(password);
               return (
                 <li key={index} className="flex items-center gap-2 text-sm">
-                  <svg 
-                    className={`w-4 h-4 ${
-                      isPassed 
-                        ? 'text-green-500' 
-                        : isDark 
-                          ? 'text-gray-500' 
-                          : 'text-gray-400'
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d={isPassed 
-                        ? "M5 13l4 4L19 7" 
-                        : "M6 18L18 6M6 6l12 12"
-                      } 
-                    />
-                  </svg>
+                  {isPassed ? <CheckIcon className="size-4 text-green-500" /> : <XIcon className="size-4 text-muted-foreground" />}
                   <span className={
                     isPassed 
-                      ? isDark 
-                        ? 'text-green-400' 
-                        : 'text-green-600'
-                      : isDark 
-                        ? 'text-gray-400' 
-                        : 'text-gray-600'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-muted-foreground'
                   }>
                     {criteria.label}
                   </span>
