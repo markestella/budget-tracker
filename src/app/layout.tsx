@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -39,12 +40,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <TooltipProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-            <Toaster richColors closeButton />
-          </TooltipProvider>
+          <QueryProvider>
+            <TooltipProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+              <Toaster richColors closeButton />
+            </TooltipProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
