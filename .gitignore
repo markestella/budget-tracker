@@ -46,4 +46,5 @@ next-env.d.ts
 /.github/prompts
 /.github/skills
 /.github/copilot-instructions.md
-
+/docs
+/openspec

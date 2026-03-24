@@ -1,4 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoneyQuest
+
+MoneyQuest is a gamified personal finance PWA for tracking income, accounts, and day-to-day money progress with a product experience that can expand into deeper budgeting and progression mechanics.
+
+## Tech Stack
+
+- [Next.js 15](https://nextjs.org) with the App Router
+- [Tailwind CSS](https://tailwindcss.com) for styling
+- [Prisma](https://www.prisma.io) for data access
 
 ## Getting Started
 

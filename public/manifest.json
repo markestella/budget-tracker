@@ -1,0 +1,9 @@
+{
+  "name": "MoneyQuest",
+  "short_name": "MQ",
+  "theme_color": "#6366f1",
+  "background_color": "#0f172a",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
