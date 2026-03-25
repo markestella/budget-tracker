@@ -154,7 +154,7 @@ async function sumExpenses(userId: string, start: Date, end: Date) {
     },
     where: {
       userId,
-      expenseDate: {
+      date: {
         gte: start,
         lt: end,
       },
@@ -191,7 +191,7 @@ async function getTopCategories(userId: string, start: Date, end: Date) {
     },
     where: {
       userId,
-      expenseDate: {
+      date: {
         gte: start,
         lt: end,
       },

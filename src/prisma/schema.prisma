@@ -12,12 +12,17 @@ model User {
   id                 String             @id @default(cuid())
   email              String             @unique
   name               String?
+  bio                String?
   password           String
   emailVerified      DateTime?
   image              String?
+  preferredTheme     ThemePreference    @default(SYSTEM)
+  preferredCurrency  String             @default("PHP")
+  lastExportedAt     DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   accounts           Account[]
+  customCategories   CustomCategory[]
   incomeRecords      IncomeRecord[]
   incomeSources      IncomeSource[]
   sessions           Session[]
@@ -26,6 +31,8 @@ model User {
   budgets            Budget[]
   budgetItems        BudgetItem[]
   categoryBudgets    CategoryBudget[]
+  savingsGoals       SavingsGoal[]
+  savingsTransactions SavingsTransaction[]
 
   @@map("users")
 }
@@ -168,23 +175,32 @@ model FinancialAccount {
   
   user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgetItems         BudgetItem[]
+  expenses            Expense[]
 
   @@map("financial_accounts")
 }
 
 model Expense {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Decimal  @db.Decimal(10,2)
-  category    String
-  description String?
-  expenseDate DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  userId             String
+  amount             Decimal           @db.Decimal(10,2)
+  category           BudgetCategory
+  merchant           String
+  date               DateTime
+  notes              String?
+  linkedAccountId    String?
+  isRecurring        Boolean           @default(false)
+  linkedBudgetItemId String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedAccount      FinancialAccount? @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  linkedBudgetItem   BudgetItem?       @relation(fields: [linkedBudgetItemId], references: [id], onDelete: SetNull)
 
-  @@index([userId, expenseDate])
+  @@index([userId, date])
   @@index([userId, category])
+  @@index([linkedAccountId])
+  @@index([linkedBudgetItemId])
   @@map("expenses")
 }
 
@@ -222,6 +238,7 @@ model BudgetItem {
   updatedAt         DateTime          @updatedAt
   user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   linkedAccount     FinancialAccount? @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  expenses          Expense[]
 
   @@index([userId, type])
   @@index([userId, category])
@@ -243,6 +260,61 @@ model CategoryBudget {
   @@unique([userId, category])
   @@index([userId])
   @@map("category_budgets")
+}
+
+model SavingsGoal {
+  id                 String             @id @default(cuid())
+  userId             String
+  name               String
+  institution        String
+  type               SavingsGoalType
+  monthlyContribution Decimal          @db.Decimal(10,2)
+  currentBalance     Decimal            @db.Decimal(10,2)
+  targetAmount       Decimal?           @db.Decimal(10,2)
+  interestRate       Decimal?           @db.Decimal(5,4)
+  startDate          DateTime
+  lastUpdatedBalance DateTime
+  status             SavingsGoalStatus  @default(ACTIVE)
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions       SavingsTransaction[]
+
+  @@index([userId, status])
+  @@index([userId, type])
+  @@map("savings_goals")
+}
+
+model SavingsTransaction {
+  id            String                 @id @default(cuid())
+  userId        String
+  savingsGoalId String
+  amount        Decimal                @db.Decimal(10,2)
+  type          SavingsTransactionType
+  date          DateTime
+  notes         String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savingsGoal   SavingsGoal            @relation(fields: [savingsGoalId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([savingsGoalId, date])
+  @@map("savings_transactions")
+}
+
+model CustomCategory {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("custom_categories")
 }
 
 enum FinancialAccountType {
@@ -274,4 +346,31 @@ enum AccountStatus {
   ACTIVE
   INACTIVE
   CLOSED
+}
+
+enum SavingsGoalType {
+  EMERGENCY_FUND
+  RETIREMENT
+  VACATION
+  EDUCATION
+  INVESTMENT
+  GENERAL
+}
+
+enum SavingsGoalStatus {
+  ACTIVE
+  IDLE
+  WITHDRAWN
+}
+
+enum SavingsTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTEREST
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
 }

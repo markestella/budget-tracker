@@ -1,188 +1,152 @@
 'use client';
 
-import React from 'react';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Typography from '@/components/ui/Typography';
-import { useTheme } from '@/components/ThemeProvider';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
-const InvestmentsPage: React.FC = () => {
-  const { isDark } = useTheme();
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import Button from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { SavingsGoalCard } from '@/components/savings/SavingsGoalCard';
+import { SavingsGoalDialog } from '@/components/savings/SavingsGoalDialog';
+import {
+  useCreateSavingsGoalMutation,
+  useCreateSavingsTransactionMutation,
+  useDeleteSavingsGoalMutation,
+  useSavingsGoalsQuery,
+  useUpdateSavingsGoalMutation,
+} from '@/hooks/api/useSavingsHooks';
+import { formatCurrency } from '@/lib/expense-ui';
+import type { SavingsGoalPayload, SavingsGoalRecord, SavingsTransactionPayload } from '@/types/savings';
+
+export default function InvestmentsPage() {
+  const savingsGoalsQuery = useSavingsGoalsQuery();
+  const createGoalMutation = useCreateSavingsGoalMutation();
+  const updateGoalMutation = useUpdateSavingsGoalMutation();
+  const deleteGoalMutation = useDeleteSavingsGoalMutation();
+  const createTransactionMutation = useCreateSavingsTransactionMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<SavingsGoalRecord | null>(null);
+
+  const goals = useMemo(() => savingsGoalsQuery.data ?? [], [savingsGoalsQuery.data]);
+  const portfolioMetrics = useMemo(() => {
+    const totalBalance = goals.reduce((sum, goal) => sum + Number(goal.currentBalance), 0);
+    const monthlyContribution = goals.reduce((sum, goal) => sum + Number(goal.monthlyContribution), 0);
+    const targetAmount = goals.reduce((sum, goal) => sum + Number(goal.targetAmount ?? 0), 0);
+    const activeGoals = goals.filter((goal) => goal.status === 'ACTIVE').length;
+
+    return {
+      activeGoals,
+      monthlyContribution,
+      targetAmount,
+      totalBalance,
+    };
+  }, [goals]);
+
+  async function handleGoalSubmit(payload: SavingsGoalPayload) {
+    try {
+      if (editingGoal) {
+        await updateGoalMutation.mutateAsync({ id: editingGoal.id, payload });
+        toast.success('Savings goal updated');
+      } else {
+        await createGoalMutation.mutateAsync(payload);
+        toast.success('Savings goal created');
+      }
+
+      setDialogOpen(false);
+      setEditingGoal(null);
+    } catch (error) {
+      console.error('Error saving goal:', error);
+      toast.error('Failed to save goal');
+    }
+  }
+
+  async function handleDelete(goal: SavingsGoalRecord) {
+    if (!window.confirm(`Delete ${goal.name}?`)) {
+      return;
+    }
+
+    try {
+      await deleteGoalMutation.mutateAsync(goal.id);
+      toast.success('Savings goal deleted');
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      toast.error('Failed to delete goal');
+    }
+  }
+
+  async function handleTransaction(goalId: string, payload: SavingsTransactionPayload) {
+    try {
+      await createTransactionMutation.mutateAsync({ id: goalId, payload });
+      toast.success('Savings transaction logged');
+    } catch (error) {
+      console.error('Error logging transaction:', error);
+      toast.error('Failed to log transaction');
+    }
+  }
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <Typography variant="h2" color="dark" className="mb-2">
-                Investments & Savings
-              </Typography>
-              <Typography variant="body" color="medium">
-                Track your investments and savings goals
-              </Typography>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.08),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.08),_transparent_24%)] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <section className="rounded-[2rem] border border-slate-200/70 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">Savings & Investments</p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl">
+                  Turn goals into balances you can actually watch grow.
+                </h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  Track emergency funds, retirement, education, and investment buckets with progress visuals and transaction history.
+                </p>
+              </div>
+              <Button onClick={() => { setEditingGoal(null); setDialogOpen(true); }}>
+                Add Savings Goal
+              </Button>
             </div>
-            <Button variant="primary">
-              Add Investment
-            </Button>
+          </section>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card><CardContent className="p-6"><p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Total Balance</p><p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">{formatCurrency(portfolioMetrics.totalBalance)}</p></CardContent></Card>
+            <Card><CardContent className="p-6"><p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Monthly Contribution</p><p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">{formatCurrency(portfolioMetrics.monthlyContribution)}</p></CardContent></Card>
+            <Card><CardContent className="p-6"><p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Combined Targets</p><p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">{formatCurrency(portfolioMetrics.targetAmount)}</p></CardContent></Card>
+            <Card><CardContent className="p-6"><p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Active Goals</p><p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">{portfolioMetrics.activeGoals}</p></CardContent></Card>
           </div>
 
-          {/* Portfolio Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Total Portfolio
-              </Typography>
-              <Typography variant="h2" color="success" className="mb-2">
-                ₱185,420.00
-              </Typography>
-              <Typography variant="caption" color="success">
-                +5.2% this month
-              </Typography>
-            </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Monthly Savings
-              </Typography>
-              <Typography variant="h2" color="primary" className="mb-2">
-                ₱15,000.00
-              </Typography>
-              <Typography variant="caption" color="success">
-                Goal: ₱12,000.00
-              </Typography>
-            </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Total Gain/Loss
-              </Typography>
-              <Typography variant="h2" color="success" className="mb-2">
-                +₱8,420.00
-              </Typography>
-              <Typography variant="caption" color="success">
-                +4.75% overall
-              </Typography>
-            </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Emergency Fund
-              </Typography>
-              <Typography variant="h2" color="accent" className="mb-2">
-                ₱45,000.00
-              </Typography>
-              <Typography variant="caption" color="success">
-                3 months expenses
-              </Typography>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Investment Holdings */}
-            <Card className="p-6">
-              <Typography variant="h3" color="dark" className="mb-6">
-                Investment Holdings
-              </Typography>
-              <div className="space-y-4">
-                {[
-                  { name: 'UITF Equity Fund', value: '₱75,500.00', change: '+₱3,200.00', changePercent: '+4.4%', allocation: 41 },
-                  { name: 'Government Bonds', value: '₱45,000.00', change: '+₱850.00', changePercent: '+1.9%', allocation: 24 },
-                  { name: 'Stock Portfolio (PSE)', value: '₱35,920.00', change: '+₱2,920.00', changePercent: '+8.8%', allocation: 19 },
-                  { name: 'MP2 PAGIBIG', value: '₱29,000.00', change: '+₱1,450.00', changePercent: '+5.3%', allocation: 16 },
-                ].map((investment, index) => (
-                  <div key={index} className={`p-4 rounded-lg border ${
-                    isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <Typography variant="body" color="dark" className="font-medium">
-                          {investment.name}
-                        </Typography>
-                        <Typography variant="caption" color="success">
-                          {investment.change} ({investment.changePercent})
-                        </Typography>
-                      </div>
-                      <div className="text-right">
-                        <Typography variant="body" color="dark" className="font-semibold">
-                          {investment.value}
-                        </Typography>
-                        <Typography variant="caption" color="medium">
-                          {investment.allocation}% of portfolio
-                        </Typography>
-                      </div>
-                    </div>
-                    <div className={`w-full h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div 
-                        className="h-full rounded-full bg-green-500"
-                        style={{ width: `${investment.allocation}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Savings Goals */}
-            <Card className="p-6">
-              <Typography variant="h3" color="dark" className="mb-6">
-                Savings Goals
-              </Typography>
-              <div className="space-y-4">
-                {[
-                  { goal: 'Emergency Fund', target: '₱60,000.00', current: '₱45,000.00', percentage: 75, deadline: 'Dec 2025' },
-                  { goal: 'New Car Down Payment', target: '₱150,000.00', current: '₱89,500.00', percentage: 60, deadline: 'Mar 2026' },
-                  { goal: 'Vacation Fund', target: '₱80,000.00', current: '₱32,000.00', percentage: 40, deadline: 'Jun 2026' },
-                  { goal: 'House Down Payment', target: '₱500,000.00', current: '₱125,000.00', percentage: 25, deadline: 'Dec 2027' },
-                ].map((goal, index) => (
-                  <div key={index} className={`p-4 rounded-lg border ${
-                    isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <Typography variant="body" color="dark" className="font-medium">
-                          {goal.goal}
-                        </Typography>
-                        <Typography variant="caption" color="medium">
-                          Target by {goal.deadline}
-                        </Typography>
-                      </div>
-                      <div className="text-right">
-                        <Typography variant="body" color="success" className="font-semibold">
-                          {goal.current}
-                        </Typography>
-                        <Typography variant="caption" color="medium">
-                          of {goal.target}
-                        </Typography>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className={`w-full h-3 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                        <div 
-                          className="h-full rounded-full bg-blue-500"
-                          style={{ width: `${goal.percentage}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-                          {goal.percentage}% complete
-                        </span>
-                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-                          ₱{(parseFloat(goal.target.replace('₱', '').replace(',', '')) - parseFloat(goal.current.replace('₱', '').replace(',', ''))).toLocaleString()}.00 to go
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+          <div className="grid gap-6">
+            {savingsGoalsQuery.isLoading ? (
+              Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-72 animate-pulse rounded-[2rem] bg-slate-100 dark:bg-slate-900" />)
+            ) : goals.length === 0 ? (
+              <Card className="rounded-[2rem] border-dashed"><CardContent className="p-10 text-center text-sm text-slate-500 dark:text-slate-400">No savings goals yet. Create one to start tracking progress and deposits.</CardContent></Card>
+            ) : (
+              goals.map((goal) => (
+                <SavingsGoalCard
+                  key={goal.id}
+                  goal={goal}
+                  isDeleting={deleteGoalMutation.isPending}
+                  isSubmittingTransaction={createTransactionMutation.isPending}
+                  onDelete={handleDelete}
+                  onEdit={(selectedGoal) => { setEditingGoal(selectedGoal); setDialogOpen(true); }}
+                  onSubmitTransaction={handleTransaction}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
+
+      <SavingsGoalDialog
+        key={`${editingGoal?.id ?? 'new-goal'}-${dialogOpen ? 'open' : 'closed'}`}
+        goal={editingGoal}
+        isPending={createGoalMutation.isPending || updateGoalMutation.isPending}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingGoal(null);
+          }
+        }}
+        onSubmit={handleGoalSubmit}
+        open={dialogOpen}
+      />
     </DashboardLayout>
   );
-};
-
-export default InvestmentsPage;
+}

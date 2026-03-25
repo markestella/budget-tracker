@@ -130,7 +130,7 @@ async function sumExpenses(userId: string, start: Date, end: Date) {
     },
     where: {
       userId,
-      expenseDate: {
+      date: {
         gte: start,
         lt: end,
       },
@@ -148,7 +148,7 @@ async function getCurrentMonthExpenseGroups(userId: string, start: Date, end: Da
     },
     where: {
       userId,
-      expenseDate: {
+      date: {
         gte: start,
         lt: end,
       },

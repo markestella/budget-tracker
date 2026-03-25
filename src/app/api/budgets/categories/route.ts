@@ -35,7 +35,7 @@ export async function GET() {
         },
         where: {
           userId: auth.user.id,
-          expenseDate: {
+          date: {
             gte: start,
             lte: end,
           },
@@ -119,7 +119,7 @@ export async function PUT(request: Request) {
       },
       where: {
         userId: auth.user.id,
-        expenseDate: {
+        date: {
           gte: start,
           lte: end,
         },

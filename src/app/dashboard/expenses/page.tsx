@@ -1,161 +1,310 @@
 'use client';
 
-import React from 'react';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Typography from '@/components/ui/Typography';
-import { useTheme } from '@/components/ThemeProvider';
+import { startTransition, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
-const ExpensesPage: React.FC = () => {
-  const { isDark } = useTheme();
+import { CardUsageSummary } from '@/components/expense/CardUsageSummary';
+import { ExpenseFilterBar } from '@/components/expense/ExpenseFilterBar';
+import { ExpenseFormDialog } from '@/components/expense/ExpenseFormDialog';
+import { QuickAddExpense } from '@/components/expense/QuickAddExpense';
+import { RecentTransactions } from '@/components/expense/RecentTransactions';
+import { TransactionHistory } from '@/components/expense/TransactionHistory';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { Card, CardContent } from '@/components/ui/Card';
+import { useAccountsQuery } from '@/hooks/api/useAccountHooks';
+import { useBudgetItemsQuery } from '@/hooks/api/useBudgetHooks';
+import {
+  useCreateExpenseMutation,
+  useDeleteExpenseMutation,
+  useExpensesQuery,
+  useRecentExpensesQuery,
+  useUpdateExpenseMutation,
+} from '@/hooks/api/useExpenseHooks';
+import { buildExpenseSearchParams, formatCurrency, readExpenseFilters } from '@/lib/expense-ui';
+import type { ExpenseFilters, ExpensePayload, ExpenseRecord } from '@/types/expenses';
+
+const initialExpensePayload = (): ExpensePayload => ({
+  amount: 0,
+  category: 'FOOD_DINING',
+  date: new Date().toISOString().split('T')[0],
+  merchant: '',
+});
+
+export default function ExpensesPage() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const filters = readExpenseFilters(new URLSearchParams(searchParams.toString()));
+  const searchFromFilters = filters.search ?? '';
+  const [searchValue, setSearchValue] = useState(searchFromFilters);
+  const [searchDirty, setSearchDirty] = useState(false);
+  const [quickAddValues, setQuickAddValues] = useState<ExpensePayload>(initialExpensePayload);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
+
+  const { accountsQuery } = useAccountsQuery();
+  const budgetItemsQuery = useBudgetItemsQuery();
+  const expensesQuery = useExpensesQuery(filters);
+  const recentExpensesQuery = useRecentExpensesQuery();
+  const createExpenseMutation = useCreateExpenseMutation(filters);
+  const updateExpenseMutation = useUpdateExpenseMutation();
+  const deleteExpenseMutation = useDeleteExpenseMutation();
+
+  useEffect(() => {
+    if (!searchDirty) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const normalizedSearch = searchValue.trim();
+
+      if (searchFromFilters === normalizedSearch) {
+        setSearchDirty(false);
+        return;
+      }
+
+      const nextFilters: ExpenseFilters = {
+        ...filters,
+        page: 1,
+        search: normalizedSearch || undefined,
+      };
+      const nextSearchParams = buildExpenseSearchParams(nextFilters);
+
+      startTransition(() => {
+        router.replace(nextSearchParams.toString() ? `${pathname}?${nextSearchParams.toString()}` : pathname, {
+          scroll: false,
+        });
+      });
+
+      setSearchDirty(false);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [filters, pathname, router, searchDirty, searchFromFilters, searchValue]);
+
+  const accounts = accountsQuery.data ?? [];
+  const budgetItems = budgetItemsQuery.data ?? [];
+  const expenseList = expensesQuery.data;
+  const expenses = expenseList?.data ?? [];
+  const recentExpenses = recentExpensesQuery.data ?? [];
+  const summaries = expenseList?.summaries;
+
+  const stats = useMemo(() => {
+    const totalAmount = summaries?.totalAmount ?? 0;
+    const totalCount = expenseList?.totalCount ?? 0;
+    const linkedCards = summaries?.accountUsage.length ?? 0;
+    const average = totalCount > 0 ? totalAmount / totalCount : 0;
+
+    return {
+      average,
+      linkedCards,
+      totalAmount,
+      totalCount,
+    };
+  }, [expenseList?.totalCount, summaries]);
+
+  function applyFilters(nextFilters: ExpenseFilters) {
+    const nextSearchParams = buildExpenseSearchParams(nextFilters);
+
+    startTransition(() => {
+      router.replace(nextSearchParams.toString() ? `${pathname}?${nextSearchParams.toString()}` : pathname, {
+        scroll: false,
+      });
+    });
+  }
+
+  function handleSearchValueChange(value: string) {
+    setSearchDirty(true);
+    setSearchValue(value);
+  }
+
+  function handlePageChange(page: number) {
+    applyFilters({
+      ...filters,
+      page,
+    });
+  }
+
+  async function handleCreateExpense(payload: ExpensePayload) {
+    try {
+      await createExpenseMutation.mutateAsync(payload);
+      setQuickAddValues(initialExpensePayload());
+      setDialogOpen(false);
+      toast.success('Expense added');
+    } catch (error) {
+      console.error('Error creating expense:', error);
+      toast.error('Failed to add expense');
+    }
+  }
+
+  async function handleDialogSubmit(payload: ExpensePayload) {
+    try {
+      if (editingExpense) {
+        await updateExpenseMutation.mutateAsync({
+          id: editingExpense.id,
+          payload,
+        });
+        toast.success('Expense updated');
+      } else {
+        await createExpenseMutation.mutateAsync(payload);
+        toast.success('Expense added');
+      }
+
+      setDialogOpen(false);
+      setEditingExpense(null);
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      toast.error('Failed to save expense');
+    }
+  }
+
+  async function handleDeleteExpense(expense: ExpenseRecord) {
+    if (!window.confirm(`Delete ${expense.merchant}?`)) {
+      return;
+    }
+
+    try {
+      await deleteExpenseMutation.mutateAsync(expense.id);
+      toast.success('Expense deleted');
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Failed to delete expense');
+    }
+  }
+
+  function openCreateDialog() {
+    setEditingExpense(null);
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(expense: ExpenseRecord) {
+    setEditingExpense(expense);
+    setDialogOpen(true);
+  }
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <Typography variant="h2" color="dark" className="mb-2">
-                Expense Tracker
-              </Typography>
-              <Typography variant="body" color="medium">
-                Monitor and categorize your spending
-              </Typography>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.12),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(239,68,68,0.10),_transparent_22%)] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <section className="rounded-[2rem] border border-slate-200/70 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-600 dark:text-rose-400">
+                  Expense Tracker
+                </p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl">
+                  Track every peso before it disappears into the month.
+                </h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  Log transactions quickly, audit card usage, and slice your spending history with the same URL-backed workflow used across the dashboard.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Card className="rounded-3xl border-white/60 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/85">
+                  <CardContent className="px-5 py-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Filtered spend</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">{formatCurrency(stats.totalAmount)}</p>
+                  </CardContent>
+                </Card>
+                <button
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
+                  onClick={openCreateDialog}
+                  type="button"
+                >
+                  Add Expense
+                </button>
+              </div>
             </div>
-            <Button variant="primary">
-              Add Expense
-            </Button>
-          </div>
+          </section>
 
-          {/* Expense Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                This Month
-              </Typography>
-              <Typography variant="h2" color="warning" className="mb-2">
-                ₱28,750.00
-              </Typography>
-              <Typography variant="caption" color="warning">
-                +15% vs last month
-              </Typography>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card className="rounded-[2rem] border-white/60 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/85">
+              <CardContent className="p-5">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Transactions</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{stats.totalCount}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Current result set</p>
+              </CardContent>
             </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Daily Average
-              </Typography>
-              <Typography variant="h2" color="primary" className="mb-2">
-                ₱1,125.00
-              </Typography>
-              <Typography variant="caption" color="medium">
-                Last 30 days
-              </Typography>
+            <Card className="rounded-[2rem] border-white/60 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/85">
+              <CardContent className="p-5">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Average ticket</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{formatCurrency(stats.average)}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Based on filtered expenses</p>
+              </CardContent>
             </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Largest Category
-              </Typography>
-              <Typography variant="body" color="dark" className="mb-1 font-medium">
-                Food & Dining
-              </Typography>
-              <Typography variant="h3" color="accent" className="mb-2">
-                ₱8,500.00
-              </Typography>
+            <Card className="rounded-[2rem] border-white/60 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/85">
+              <CardContent className="p-5">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Linked cards</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{stats.linkedCards}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Accounts with tracked activity</p>
+              </CardContent>
             </Card>
-
-            <Card className="p-6">
-              <Typography variant="h4" color="dark" className="mb-4">
-                Budget Status
-              </Typography>
-              <Typography variant="h2" color="success" className="mb-2">
-                72%
-              </Typography>
-              <Typography variant="caption" color="success">
-                Within budget
-              </Typography>
+            <Card className="rounded-[2rem] border-white/60 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/85">
+              <CardContent className="p-5">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Recent feed</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{recentExpenses.length}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Latest transactions loaded</p>
+              </CardContent>
             </Card>
           </div>
 
-          {/* Recent Expenses */}
-          <Card className="p-6 mb-6">
-            <Typography variant="h3" color="dark" className="mb-6">
-              Recent Expenses
-            </Typography>
-            <div className="space-y-4">
-              {[
-                { description: 'Grocery Shopping at SM', amount: '₱1,250.00', category: 'Food & Dining', date: 'Oct 25, 2025', account: 'BPI Debit' },
-                { description: 'Uber ride to office', amount: '₱180.00', category: 'Transportation', date: 'Oct 25, 2025', account: 'GCash' },
-                { description: 'Netflix subscription', amount: '₱549.00', category: 'Entertainment', date: 'Oct 24, 2025', account: 'BPI Credit' },
-                { description: 'Starbucks coffee', amount: '₱325.00', category: 'Food & Dining', date: 'Oct 24, 2025', account: 'BPI Debit' },
-                { description: 'Gasoline', amount: '₱2,100.00', category: 'Transportation', date: 'Oct 23, 2025', account: 'BPI Credit' },
-              ].map((expense, index) => (
-                <div key={index} className={`flex items-center justify-between p-4 rounded-lg border ${
-                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="flex-1">
-                    <Typography variant="body" color="dark" className="font-medium">
-                      {expense.description}
-                    </Typography>
-                    <Typography variant="caption" color="medium">
-                      {expense.date} • {expense.category} • {expense.account}
-                    </Typography>
-                  </div>
-                  <Typography variant="body" color="dark" className="font-semibold">
-                    -{expense.amount}
-                  </Typography>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <QuickAddExpense
+            accounts={accounts}
+            isPending={createExpenseMutation.isPending}
+            onChange={setQuickAddValues}
+            onOpenFullForm={openCreateDialog}
+            onSubmit={handleCreateExpense}
+            values={quickAddValues}
+          />
 
-          {/* Expense Categories */}
-          <Card className="p-6">
-            <Typography variant="h3" color="dark" className="mb-6">
-              Spending by Category
-            </Typography>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { category: 'Food & Dining', amount: '₱8,500.00', percentage: 30, color: 'bg-blue-500' },
-                { category: 'Transportation', amount: '₱5,200.00', percentage: 18, color: 'bg-green-500' },
-                { category: 'Bills & Utilities', amount: '₱4,800.00', percentage: 17, color: 'bg-yellow-500' },
-                { category: 'Shopping', amount: '₱3,750.00', percentage: 13, color: 'bg-purple-500' },
-                { category: 'Entertainment', amount: '₱2,900.00', percentage: 10, color: 'bg-pink-500' },
-                { category: 'Healthcare', amount: '₱3,600.00', percentage: 12, color: 'bg-red-500' },
-              ].map((category, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${
-                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <Typography variant="body" color="dark" className="font-medium">
-                      {category.category}
-                    </Typography>
-                    <Typography variant="body" color="dark" className="font-semibold">
-                      {category.amount}
-                    </Typography>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-full h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div 
-                        className={`h-full rounded-full ${category.color}`}
-                        style={{ width: `${category.percentage}%` }}
-                      />
-                    </div>
-                    <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {category.percentage}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <ExpenseFilterBar
+            accounts={accounts}
+            filters={filters}
+            onClear={() => {
+              setSearchValue('');
+              setSearchDirty(false);
+              applyFilters({ page: 1, pageSize: filters.pageSize ?? 20 });
+            }}
+            onFiltersChange={applyFilters}
+            onSearchValueChange={handleSearchValueChange}
+            searchValue={searchDirty ? searchValue : searchFromFilters}
+          />
+
+          <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
+            <CardUsageSummary items={summaries?.accountUsage ?? []} />
+            <RecentTransactions expenses={recentExpenses} isLoading={recentExpensesQuery.isLoading} />
+          </div>
+
+          <TransactionHistory
+            expenses={expenses}
+            isLoading={expensesQuery.isLoading}
+            onDelete={handleDeleteExpense}
+            onEdit={openEditDialog}
+            onPageChange={handlePageChange}
+            page={expenseList?.page ?? filters.page ?? 1}
+            totalCount={expenseList?.totalCount ?? 0}
+            totalPages={expenseList?.totalPages ?? 1}
+          />
+
+          <ExpenseFormDialog
+            key={`${editingExpense?.id ?? 'new'}-${dialogOpen ? 'open' : 'closed'}`}
+            accounts={accounts}
+            budgetItems={budgetItems}
+            expense={editingExpense}
+            isPending={createExpenseMutation.isPending || updateExpenseMutation.isPending}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+
+              if (!open) {
+                setEditingExpense(null);
+              }
+            }}
+            onSubmit={handleDialogSubmit}
+            open={dialogOpen}
+          />
         </div>
       </div>
     </DashboardLayout>
   );
-};
-
-export default ExpensesPage;
+}
