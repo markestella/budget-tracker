@@ -13,6 +13,11 @@ import {
 import { useSession } from 'next-auth/react';
 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { BudgetHealthBar } from '@/components/dashboard/BudgetHealthBar';
+import { OverspendWarning } from '@/components/dashboard/OverspendWarning';
+import { BudgetProgressBars } from '@/components/dashboard/charts/BudgetProgressBars';
+import { CategoryDonutChart } from '@/components/dashboard/charts/CategoryDonutChart';
+import { SpendingTrendChart } from '@/components/dashboard/charts/SpendingTrendChart';
 import { FadeIn } from '@/components/animations/FadeIn';
 import {
   Card,
@@ -24,6 +29,7 @@ import {
 import {
   type DashboardSummary,
   type DashboardTrend,
+  useDashboardChartsQuery,
   useDashboardQuery,
 } from '@/hooks/api/useDashboardHooks';
 import { cn } from '@/lib/utils';
@@ -210,9 +216,67 @@ function ErrorDashboard({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+function ChartsLoadingState() {
+  return (
+    <>
+      <Card className="h-full border-white/60 bg-white/75 dark:border-slate-800/80 dark:bg-slate-950/75">
+        <CardHeader className="space-y-3">
+          <div className="h-5 w-36 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-4 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 animate-pulse rounded-[1.75rem] bg-slate-200/80 dark:bg-slate-800/80" />
+        </CardContent>
+      </Card>
+      <Card className="h-full border-white/60 bg-white/75 dark:border-slate-800/80 dark:bg-slate-950/75">
+        <CardHeader className="space-y-3">
+          <div className="h-5 w-36 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-4 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 animate-pulse rounded-[1.75rem] bg-slate-200/80 dark:bg-slate-800/80" />
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+function ChartsErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card className="border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/30 xl:col-span-2">
+      <CardHeader>
+        <CardTitle>Charts are unavailable</CardTitle>
+        <CardDescription>
+          The dashboard summary loaded, but the charts dataset could not be fetched.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+        >
+          Retry charts request
+        </button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const { data, error, isLoading, refetch } = useDashboardQuery();
+  const {
+    data,
+    error,
+    isLoading,
+    refetch,
+  } = useDashboardQuery();
+  const {
+    data: chartsData,
+    error: chartsError,
+    isLoading: chartsLoading,
+    refetch: refetchCharts,
+  } = useDashboardChartsQuery();
 
   return (
     <DashboardLayout>
@@ -254,70 +318,46 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-                <FadeIn delay={0.32}>
-                  <Card className="h-full border-dashed border-slate-300/80 bg-white/80 dark:border-slate-700 dark:bg-slate-950/80">
-                    <CardHeader>
-                      <CardTitle>Spending trend chart</CardTitle>
-                      <CardDescription>
-                        Placeholder area for the time-series chart coming next. The layout is ready for a monthly income-versus-expense visualization.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex h-72 items-end gap-3 rounded-[1.75rem] border border-dashed border-slate-300/80 bg-slate-50/80 p-6 dark:border-slate-700 dark:bg-slate-900/50">
-                        {['W1', 'W2', 'W3', 'W4', 'W5'].map((label, index) => (
-                          <div key={label} className="flex flex-1 flex-col items-center justify-end gap-3">
-                            <div
-                              className="w-full rounded-t-2xl bg-gradient-to-t from-sky-500/20 to-sky-500/50"
-                              style={{ height: `${32 + index * 12}%` }}
-                            />
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                              {label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </FadeIn>
+              <FadeIn delay={0.26}>
+                <BudgetHealthBar
+                  budget={data.totalBudgetThisMonth}
+                  spent={data.totalExpensesThisMonth}
+                />
+              </FadeIn>
 
-                <FadeIn delay={0.4}>
-                  <Card className="h-full border-dashed border-slate-300/80 bg-white/80 dark:border-slate-700 dark:bg-slate-950/80">
-                    <CardHeader>
-                      <CardTitle>Category breakdown</CardTitle>
-                      <CardDescription>
-                        Placeholder section for the spending-category chart. Current top categories are listed so the next chart component has real dashboard data to build from.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {data.topCategories.length > 0 ? (
-                        data.topCategories.map((category, index) => (
-                          <div
-                            key={category.category}
-                            className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50"
-                          >
-                            <div>
-                              <p className="text-sm font-medium text-slate-950 dark:text-slate-100">
-                                {index + 1}. {category.category}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Chart placeholder data source
-                              </p>
-                            </div>
-                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                              {formatCurrency(category.amount)}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="rounded-[1.75rem] border border-dashed border-slate-300/80 bg-slate-50/80 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
-                          No spending categories for this month yet. The chart placeholder will populate when expense records are available.
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </FadeIn>
+              <FadeIn delay={0.3}>
+                <OverspendWarning
+                  budgetUsedPercent={data.budgetUsedPercent}
+                  totalBudget={data.totalBudgetThisMonth}
+                  totalExpenses={data.totalExpensesThisMonth}
+                />
+              </FadeIn>
+
+              <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+                {chartsLoading ? <ChartsLoadingState /> : null}
+
+                {!chartsLoading && chartsError ? (
+                  <ChartsErrorState onRetry={() => void refetchCharts()} />
+                ) : null}
+
+                {!chartsLoading && chartsData ? (
+                  <>
+                    <FadeIn delay={0.32}>
+                      <SpendingTrendChart data={chartsData.monthlyTrend} />
+                    </FadeIn>
+
+                    <FadeIn delay={0.4}>
+                      <CategoryDonutChart data={chartsData.categoryBreakdown} />
+                    </FadeIn>
+                  </>
+                ) : null}
               </div>
+
+              {!chartsLoading && chartsData ? (
+                <FadeIn delay={0.48}>
+                  <BudgetProgressBars data={chartsData.budgetProgress} />
+                </FadeIn>
+              ) : null}
             </>
           ) : null}
         </div>

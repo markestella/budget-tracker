@@ -22,6 +22,7 @@ interface DashboardTrend {
 interface DashboardMetricSummary {
   totalIncomeThisMonth: number;
   totalExpensesThisMonth: number;
+  totalBudgetThisMonth: number;
   netSavings: number;
   budgetUsedPercent: number;
   topCategories: Array<{
@@ -248,6 +249,7 @@ export async function GET() {
     const response: DashboardMetricSummary = {
       totalIncomeThisMonth: round(currentIncome),
       totalExpensesThisMonth: round(currentExpenses),
+      totalBudgetThisMonth: round(currentBudget),
       netSavings: round(currentNetSavings),
       budgetUsedPercent: round(currentBudgetUsedPercent),
       topCategories,
