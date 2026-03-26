@@ -2,5 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "prisma generate && next build",
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "crons": [
+    {
+      "path": "/api/cron/notifications?job=daily",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/notifications?job=weekly",
+      "schedule": "0 9 * * 0"
+    }
+  ]
 }

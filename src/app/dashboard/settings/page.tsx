@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useTheme as useNextTheme } from 'next-themes';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Info, Trash2 } from 'lucide-react';
+import { BellRing, Download, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -15,7 +15,6 @@ import Input from '@/components/ui/Input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -36,7 +35,21 @@ import {
   useUpdateProfileMutation,
   settingsKeys,
 } from '@/hooks/api/useSettingsHooks';
+import {
+  useNotificationPreferencesQuery,
+  useSendTestNotificationMutation,
+  useSubscribeToNotificationsMutation,
+  useUnsubscribeFromNotificationsMutation,
+  useUpdateNotificationPreferencesMutation,
+} from '@/hooks/api/useNotificationHooks';
 import { budgetCategoryLabels } from '@/lib/expense-ui';
+import {
+  getBrowserPushSubscription,
+  isPushNotificationSupported,
+  subscribeCurrentBrowser,
+  unsubscribeCurrentBrowser,
+} from '@/lib/notifications/client';
+import type { NotificationPreferenceRecord } from '@/types/notifications';
 
 const avatarPresets = [
   'https://api.dicebear.com/9.x/adventurer/svg?seed=moneyquest-1',
@@ -47,15 +60,62 @@ const avatarPresets = [
 
 const builtInCategories = Object.values(budgetCategoryLabels);
 
+const notificationOptions: Array<{
+  description: string;
+  key: keyof Omit<NotificationPreferenceRecord, 'userId'>;
+  label: string;
+}> = [
+  {
+    description: 'Reminders for bills due in 3 days, tomorrow, and today.',
+    key: 'billReminders',
+    label: 'Bill reminders',
+  },
+  {
+    description: 'Alerts when category budgets reach 80%, 90%, and 100% usage.',
+    key: 'budgetWarnings',
+    label: 'Budget warnings',
+  },
+  {
+    description: 'Celebrations for milestones and future gamified achievements.',
+    key: 'achievementAlerts',
+    label: 'Achievement alerts',
+  },
+  {
+    description: 'Daily nudges reserved for future coaching content.',
+    key: 'dailyTips',
+    label: 'Daily tips',
+  },
+  {
+    description: 'A weekly recap of your spending, income, and savings activity.',
+    key: 'weeklySummary',
+    label: 'Weekly summary',
+  },
+  {
+    description: 'Warnings when your activity streak is about to break by 8 PM.',
+    key: 'streakWarnings',
+    label: 'Streak warnings',
+  },
+  {
+    description: 'Challenge deadline reminders reserved for future game loops.',
+    key: 'challengeDeadlines',
+    label: 'Challenge deadlines',
+  },
+];
+
 export default function SettingsPage() {
   const settingsQuery = useSettingsQuery();
   const categoriesQuery = useCustomCategoriesQuery();
+  const notificationPreferencesQuery = useNotificationPreferencesQuery();
   const updateProfileMutation = useUpdateProfileMutation();
   const updatePasswordMutation = useUpdatePasswordMutation();
   const updatePreferencesMutation = useUpdatePreferencesMutation();
+  const updateNotificationPreferencesMutation = useUpdateNotificationPreferencesMutation();
   const createCustomCategoryMutation = useCreateCustomCategoryMutation();
   const deleteCustomCategoryMutation = useDeleteCustomCategoryMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
+  const subscribeToNotificationsMutation = useSubscribeToNotificationsMutation();
+  const unsubscribeFromNotificationsMutation = useUnsubscribeFromNotificationsMutation();
+  const sendTestNotificationMutation = useSendTestNotificationMutation();
   const queryClient = useQueryClient();
   const { setTheme, resolvedTheme } = useNextTheme();
 
@@ -69,12 +129,50 @@ export default function SettingsPage() {
   const [customCategoryName, setCustomCategoryName] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [notificationsSupported, setNotificationsSupported] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const profileDefaults = useMemo(() => ({
     bio: settingsQuery.data?.bio ?? '',
     image: settingsQuery.data?.image ?? '',
     name: settingsQuery.data?.name ?? '',
   }), [settingsQuery.data?.bio, settingsQuery.data?.image, settingsQuery.data?.name]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!isPushNotificationSupported()) {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (!isActive) {
+        return;
+      }
+
+      setNotificationsSupported(true);
+      setNotificationPermission(Notification.permission);
+    });
+
+    getBrowserPushSubscription()
+      .then((subscription) => {
+        if (isActive) {
+          setIsSubscribed(Boolean(subscription));
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsSubscribed(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const exportMutation = useMutation({
     mutationFn: async (format: 'json' | 'csv') => {
@@ -175,6 +273,77 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleEnableNotifications() {
+    if (!isPushNotificationSupported()) {
+      toast.error('Push notifications are not supported in this browser');
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+
+      if (permission !== 'granted') {
+        toast.error('Notification permission was not granted');
+        return;
+      }
+
+      const subscription = await subscribeCurrentBrowser();
+      await subscribeToNotificationsMutation.mutateAsync(subscription);
+      setIsSubscribed(true);
+      toast.success('Notifications enabled for this device');
+    } catch (error) {
+      console.error('Error enabling notifications:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to enable notifications');
+    }
+  }
+
+  async function handleDisableNotifications() {
+    try {
+      const endpoint = await unsubscribeCurrentBrowser();
+
+      if (endpoint) {
+        await unsubscribeFromNotificationsMutation.mutateAsync(endpoint);
+      }
+
+      setIsSubscribed(false);
+      toast.success('Notifications disabled for this device');
+    } catch (error) {
+      console.error('Error disabling notifications:', error);
+      toast.error('Failed to disable notifications');
+    }
+  }
+
+  async function handleNotificationPreferenceChange(
+    key: keyof Omit<NotificationPreferenceRecord, 'userId'>,
+    checked: boolean,
+  ) {
+    try {
+      await updateNotificationPreferencesMutation.mutateAsync({
+        [key]: checked,
+      });
+      toast.success('Notification preferences updated');
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      toast.error('Failed to update notification preferences');
+    }
+  }
+
+  async function handleSendTestNotification() {
+    try {
+      await sendTestNotificationMutation.mutateAsync({
+        body: 'MoneyQuest push notifications are configured for this browser.',
+        tag: 'moneyquest-test-notification',
+        title: 'MoneyQuest test notification',
+        url: '/dashboard/settings',
+      });
+      toast.success('Test notification requested');
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to send test notification');
+    }
+  }
+
   const customCategories = categoriesQuery.data ?? settingsQuery.data?.customCategories ?? [];
   const lastExportDate = settingsQuery.data?.lastExportedAt
     ? new Date(settingsQuery.data.lastExportedAt).toLocaleString('en-PH', {
@@ -192,9 +361,8 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <TooltipProvider>
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.07),_transparent_24%)] px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl space-y-6">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.07),_transparent_24%)] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
             <section className="rounded-[2rem] border border-slate-200/70 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600 dark:text-blue-400">Settings</p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl">Profile, security, exports, and the knobs that matter.</h1>
@@ -367,31 +535,78 @@ export default function SettingsPage() {
                 <Card className="rounded-[2rem]">
                   <CardHeader>
                     <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Placeholder controls for the next delivery phase.</CardDescription>
+                    <CardDescription>Enable browser push, choose which alerts matter, and send a test notification to this device.</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      'Budget alerts',
-                      'Savings milestone alerts',
-                      'Security alerts',
-                      'Weekly summary emails',
-                    ].map((label) => (
-                      <div key={label} className="flex items-center justify-between rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <p className="font-medium text-slate-950 dark:text-slate-100">{label}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Coming in Phase 2</p>
+                  <CardContent className="space-y-6">
+                    <div className="rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-slate-950 dark:text-slate-100">
+                            <BellRing className="size-4 text-indigo-500" />
+                            <p className="font-semibold">Browser notification access</p>
                           </div>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="size-4 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>Coming in Phase 2</TooltipContent>
-                          </Tooltip>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {notificationsSupported
+                              ? isSubscribed
+                                ? 'This browser is connected for MoneyQuest push notifications.'
+                                : 'Grant permission and subscribe this device to receive reminders and summaries.'
+                              : 'This browser does not support the Push API.'}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Permission: {notificationPermission}
+                          </p>
                         </div>
-                        <Switch disabled checked={false} />
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                            isLoading={subscribeToNotificationsMutation.isPending}
+                            disabled={!notificationsSupported || isSubscribed}
+                            onClick={handleEnableNotifications}
+                          >
+                            Enable Notifications
+                          </Button>
+                          <Button
+                            variant="outline"
+                            isLoading={unsubscribeFromNotificationsMutation.isPending}
+                            disabled={!isSubscribed}
+                            onClick={handleDisableNotifications}
+                          >
+                            Disconnect Device
+                          </Button>
+                        </div>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="grid gap-3">
+                      {notificationOptions.map((option) => (
+                        <div key={option.key} className="flex items-center justify-between rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/40">
+                          <div>
+                            <p className="font-medium text-slate-950 dark:text-slate-100">{option.label}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{option.description}</p>
+                          </div>
+                          <Switch
+                            checked={notificationPreferencesQuery.data?.[option.key] ?? false}
+                            disabled={notificationPreferencesQuery.isLoading || updateNotificationPreferencesMutation.isPending}
+                            onCheckedChange={(checked) => handleNotificationPreferenceChange(option.key, checked)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col gap-3 rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-5 dark:border-slate-800 dark:bg-slate-950/60 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="font-medium text-slate-950 dark:text-slate-100">Test delivery</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Send a sample push notification to the currently connected browser.</p>
+                      </div>
+                      <Button
+                        disabled={!isSubscribed}
+                        isLoading={sendTestNotificationMutation.isPending}
+                        onClick={handleSendTestNotification}
+                        variant="outline"
+                      >
+                        <Send className="size-4" />
+                        Test Notification
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -418,7 +633,6 @@ export default function SettingsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </TooltipProvider>
     </DashboardLayout>
   );
 }

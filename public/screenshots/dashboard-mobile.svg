@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" fill="none">
+  <rect width="1080" height="1920" fill="#020617"/>
+  <rect x="72" y="120" width="936" height="1680" rx="56" fill="#0F172A" stroke="#334155"/>
+  <rect x="132" y="220" width="320" height="64" rx="24" fill="#6366F1"/>
+  <rect x="132" y="332" width="816" height="220" rx="40" fill="#1E293B"/>
+  <rect x="132" y="596" width="392" height="260" rx="40" fill="#1E293B"/>
+  <rect x="556" y="596" width="392" height="260" rx="40" fill="#1E293B"/>
+  <rect x="132" y="900" width="816" height="560" rx="40" fill="#111827" stroke="#475569"/>
+  <text x="132" y="170" fill="#E2E8F0" font-family="Arial, sans-serif" font-size="54" font-weight="700">MoneyQuest Dashboard</text>
+  <text x="132" y="432" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="42">Weekly financial snapshot</text>
+  <text x="132" y="1000" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="42">Progress charts and budget status</text>
+</svg>
