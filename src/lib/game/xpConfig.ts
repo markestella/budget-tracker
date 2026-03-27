@@ -1,0 +1,19 @@
+export const XP_ACTIONS = {
+  LOG_EXPENSE: 5,
+  UNDER_DAILY_BUDGET: 10,
+  WEEKLY_CHALLENGE: 50,
+  SAVINGS_MILESTONE: 100,
+  STREAK_7_DAYS: 75,
+  STREAK_30_DAYS: 300,
+  COMPLETE_QUEST: 200,
+  FIRST_SETUP: 50,
+} as const;
+
+export const BADGE_XP_BY_TIER = {
+  BRONZE: 25,
+  SILVER: 50,
+  GOLD: 100,
+  PLATINUM: 500,
+} as const;
+
+export type XPAction = keyof typeof XP_ACTIONS;

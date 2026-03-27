@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 import { errorResponse, jsonResponse, validateRequest } from '@/lib/api-utils';
+import { afterFinancialAction } from '@/lib/game/hooks';
 import { prisma } from '@/lib/prisma';
 import { resolveAuthenticatedUser } from '@/lib/session-user';
 import {
@@ -292,7 +293,15 @@ export async function POST(request: Request) {
       include: expenseInclude,
     });
 
-    return jsonResponse(expense, { status: 201 });
+    // Gamification hooks (non-blocking — errors don't break expense creation)
+    let gameResult = null;
+    try {
+      gameResult = await afterFinancialAction(auth.user.id, 'EXPENSE_LOGGED', 'LOG_EXPENSE');
+    } catch (e) {
+      console.error('Gamification hook error:', e);
+    }
+
+    return jsonResponse({ ...expense, game: gameResult }, { status: 201 });
   } catch (error) {
     console.error('Error creating expense:', error);
 

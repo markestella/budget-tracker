@@ -19,6 +19,10 @@ import { BudgetProgressBars } from '@/components/dashboard/charts/BudgetProgress
 import { CategoryDonutChart } from '@/components/dashboard/charts/CategoryDonutChart';
 import { SpendingTrendChart } from '@/components/dashboard/charts/SpendingTrendChart';
 import { FadeIn } from '@/components/animations/FadeIn';
+import { XPBar } from '@/components/game/XPBar';
+import { StreakDisplay } from '@/components/game/StreakDisplay';
+import { HealthScoreWidget } from '@/components/game/HealthScoreWidget';
+import { QuestPanel } from '@/components/game/QuestPanel';
 import {
   Card,
   CardContent,
@@ -299,6 +303,11 @@ export default function DashboardPage() {
                 {formatCurrentDate()}
               </div>
             </div>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <XPBar className="flex-1 max-w-md" />
+              <StreakDisplay />
+            </div>
           </FadeIn>
 
           {isLoading ? <LoadingDashboard /> : null}
@@ -358,6 +367,15 @@ export default function DashboardPage() {
                   <BudgetProgressBars data={chartsData.budgetProgress} />
                 </FadeIn>
               ) : null}
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <FadeIn delay={0.52}>
+                  <HealthScoreWidget />
+                </FadeIn>
+                <FadeIn delay={0.56}>
+                  <QuestPanel />
+                </FadeIn>
+              </div>
             </>
           ) : null}
         </div>
