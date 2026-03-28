@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Confetti } from '@/components/animations/Confetti';
 import { BadgeData } from '@/hooks/api/useGameBadges';
 
 const tierLabels: Record<string, string> = {
@@ -30,6 +31,7 @@ export function BadgeUnlockModal({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="text-center sm:max-w-xs">
+        {badge.earned && open && <Confetti particleCount={32} />}
         <DialogHeader>
           <DialogTitle className="sr-only">{badge.name}</DialogTitle>
           <DialogDescription className="sr-only">

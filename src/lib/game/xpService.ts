@@ -7,6 +7,21 @@ export interface AwardXPResult {
   newTotal: number;
   leveledUp: boolean;
   newLevel: number;
+  multiplierApplied?: number;
+}
+
+async function getActiveXPMultiplier(): Promise<number> {
+  const now = new Date();
+  const events = await prisma.seasonalEvent.findMany({
+    where: {
+      startDate: { lte: now },
+      endDate: { gte: now },
+      xpMultiplier: { gt: 1.0 },
+    },
+    select: { xpMultiplier: true },
+  });
+  if (events.length === 0) return 1;
+  return Math.max(...events.map((e) => e.xpMultiplier));
 }
 
 export async function awardXP(
@@ -14,12 +29,15 @@ export async function awardXP(
   action: XPAction | string,
   customAmount?: number,
 ): Promise<AwardXPResult> {
-  const amount = customAmount ?? (XP_ACTIONS as Record<string, number>)[action] ?? 0;
+  const baseAmount = customAmount ?? (XP_ACTIONS as Record<string, number>)[action] ?? 0;
 
-  if (amount <= 0) {
+  if (baseAmount <= 0) {
     const profile = await getOrCreateProfile(userId);
     return { xpGained: 0, newTotal: profile.xp, leveledUp: false, newLevel: profile.level };
   }
+
+  const multiplier = await getActiveXPMultiplier();
+  const amount = Math.round(baseAmount * multiplier);
 
   const profile = await prisma.gameProfile.upsert({
     where: { userId },
@@ -41,7 +59,7 @@ export async function awardXP(
     data: { userId, amount, action, description: `Earned ${amount} XP for ${action}` },
   });
 
-  return { xpGained: amount, newTotal: profile.xp, leveledUp, newLevel };
+  return { xpGained: amount, newTotal: profile.xp, leveledUp, newLevel, multiplierApplied: multiplier > 1 ? multiplier : undefined };
 }
 
 export async function getOrCreateProfile(userId: string) {

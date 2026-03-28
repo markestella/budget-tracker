@@ -231,7 +231,7 @@ export async function GET() {
         totalSpent > 0 ? round((entry.amount / totalSpent) * 100) : 0,
     }));
 
-    const spentByCategory = new Map(
+    const spentByCategory = new Map<string, number>(
       expenseGroups.map((entry) => [entry.category, entry.amount])
     );
     const budgetByCategory = new Map<string, number>();

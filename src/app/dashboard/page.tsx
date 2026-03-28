@@ -19,6 +19,7 @@ import { BudgetProgressBars } from '@/components/dashboard/charts/BudgetProgress
 import { CategoryDonutChart } from '@/components/dashboard/charts/CategoryDonutChart';
 import { SpendingTrendChart } from '@/components/dashboard/charts/SpendingTrendChart';
 import { FadeIn } from '@/components/animations/FadeIn';
+import DailyQuote from '@/components/dashboard/DailyQuote';
 import { XPBar } from '@/components/game/XPBar';
 import { StreakDisplay } from '@/components/game/StreakDisplay';
 import { HealthScoreWidget } from '@/components/game/HealthScoreWidget';
@@ -36,6 +37,10 @@ import {
   useDashboardChartsQuery,
   useDashboardQuery,
 } from '@/hooks/api/useDashboardHooks';
+import { MiniLeaderboardRank } from '@/components/social/MiniLeaderboardRank';
+import { ActiveChallengeWidget } from '@/components/social/ActiveChallengeWidget';
+import { AIInsightsWidget } from '@/components/ai/AIInsightsWidget';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { cn } from '@/lib/utils';
 
 const currencyFormatter = new Intl.NumberFormat('en-PH', {
@@ -342,6 +347,10 @@ export default function DashboardPage() {
                 />
               </FadeIn>
 
+              <FadeIn delay={0.32}>
+                <DailyQuote />
+              </FadeIn>
+
               <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
                 {chartsLoading ? <ChartsLoadingState /> : null}
 
@@ -370,12 +379,35 @@ export default function DashboardPage() {
 
               <div className="grid gap-6 xl:grid-cols-2">
                 <FadeIn delay={0.52}>
-                  <HealthScoreWidget />
+                  <ErrorBoundary>
+                    <HealthScoreWidget />
+                  </ErrorBoundary>
                 </FadeIn>
                 <FadeIn delay={0.56}>
-                  <QuestPanel />
+                  <ErrorBoundary>
+                    <QuestPanel />
+                  </ErrorBoundary>
                 </FadeIn>
               </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <FadeIn delay={0.6}>
+                  <ErrorBoundary>
+                    <MiniLeaderboardRank />
+                  </ErrorBoundary>
+                </FadeIn>
+                <FadeIn delay={0.64}>
+                  <ErrorBoundary>
+                    <ActiveChallengeWidget />
+                  </ErrorBoundary>
+                </FadeIn>
+              </div>
+
+              <FadeIn delay={0.68}>
+                <ErrorBoundary>
+                  <AIInsightsWidget />
+                </ErrorBoundary>
+              </FadeIn>
             </>
           ) : null}
         </div>

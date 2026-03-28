@@ -7,6 +7,10 @@ export const XP_ACTIONS = {
   STREAK_30_DAYS: 300,
   COMPLETE_QUEST: 200,
   FIRST_SETUP: 50,
+  COMPLETE_PERSONALITY_QUIZ: 50,
+  CREATE_GUILD: 100,
+  COMPLETE_COMMUNITY_CHALLENGE: 0, // uses challenge-specific xpReward
+  REACT_TO_ACHIEVEMENT: 2,
 } as const;
 
 export const BADGE_XP_BY_TIER = {

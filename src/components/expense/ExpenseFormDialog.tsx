@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import Button from '@/components/ui/Button';
 import {
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { budgetCategoryLabels } from '@/lib/expense-ui';
+import { useAutoCategorize } from '@/hooks/api/useAutoCategorizeHook';
 import type { Account } from '@/hooks/api/useAccountHooks';
 import type { BudgetItem } from '@/types/budgets';
 import type { ExpensePayload, ExpenseRecord } from '@/types/expenses';
@@ -70,6 +71,28 @@ export function ExpenseFormDialog({
   open,
 }: ExpenseFormDialogProps) {
   const [form, setForm] = useState<FormState>(() => createInitialState(expense));
+  const categorizeMut = useAutoCategorize();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Auto-categorize when merchant changes (only for new expenses)
+  useEffect(() => {
+    if (expense) return; // skip for edits
+    const merchant = form.merchant.trim();
+    if (merchant.length < 3) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      categorizeMut.mutate(merchant, {
+        onSuccess: (data) => {
+          if (data.confidence >= 0.6) {
+            setForm((current) => ({ ...current, category: data.category }));
+          }
+        },
+      });
+    }, 500);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [form.merchant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -35,6 +35,7 @@ model User {
   pushSubscriptions  PushSubscription[]
   savingsGoals       SavingsGoal[]
   savingsTransactions SavingsTransaction[]
+  wishlistItems      WishlistItem[]
   gameProfile        GameProfile?
   xpTransactions     XPTransaction[]
   userBadges         UserBadge[]
@@ -43,6 +44,19 @@ model User {
   streakFreezes      StreakFreeze[]
   userAvatar         UserAvatar?
   userAvatarItems    UserAvatarItem[]
+  leaderboardOptIn   LeaderboardOptIn?
+  createdGuilds      Guild[]            @relation("GuildCreator")
+  guildMemberships   GuildMember[]
+  guildMessages      GuildMessage[]
+  achievementEvents  AchievementEvent[]
+  feedReactions      FeedReaction[]
+  challengeProgress  UserChallengeProgress[]
+  aiConversations    AIConversation[]
+  spendingPatterns   SpendingPattern[]
+  budgetSuggestions  BudgetSuggestion[]
+  receiptScans       ReceiptScan[]
+  seasonalProgress   UserSeasonalProgress[]
+  isPremium          Boolean            @default(true)
 
   @@map("users")
 }
@@ -290,6 +304,7 @@ model SavingsGoal {
   updatedAt          DateTime           @updatedAt
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions       SavingsTransaction[]
+  wishlistItems      WishlistItem[]
 
   @@index([userId, status])
   @@index([userId, type])
@@ -618,4 +633,372 @@ enum AvatarUnlockCondition {
   BADGE
   PREMIUM
   FREE
+}
+
+// ─── Wishlist Models ─────────────────────────────────────────────────
+
+model WishlistItem {
+  id                   String             @id @default(cuid())
+  userId               String
+  name                 String
+  price                Decimal            @db.Decimal(10, 2)
+  imageUrl             String?
+  productUrl           String?
+  linkedSavingsGoalId  String?
+  savedAmount          Decimal            @default(0) @db.Decimal(10, 2)
+  priority             WishlistPriority   @default(MEDIUM)
+  status               WishlistStatus     @default(SAVING)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedSavingsGoal    SavingsGoal?       @relation(fields: [linkedSavingsGoalId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, name])
+  @@index([userId, status])
+  @@index([userId, priority])
+  @@map("wishlist_items")
+}
+
+enum WishlistPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum WishlistStatus {
+  SAVING
+  AFFORDABLE
+  PURCHASED
+}
+
+// ─── SOCIAL: LEADERBOARD ──────────────────────────────
+
+model LeaderboardOptIn {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  isOptedIn   Boolean  @default(false)
+  displayName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("leaderboard_opt_ins")
+}
+
+// ─── SOCIAL: GUILDS ───────────────────────────────────
+
+model Guild {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdById String
+  inviteCode  String   @unique
+  maxMembers  Int      @default(20)
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator    User             @relation("GuildCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members    GuildMember[]
+  challenges GuildChallenge[]
+  messages   GuildMessage[]
+
+  @@map("guilds")
+}
+
+model GuildMember {
+  id       String        @id @default(cuid())
+  guildId  String
+  userId   String
+  role     GuildRole     @default(MEMBER)
+  joinedAt DateTime      @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, userId])
+  @@index([userId])
+  @@map("guild_members")
+}
+
+enum GuildRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model GuildChallenge {
+  id           String               @id @default(cuid())
+  guildId      String
+  title        String
+  description  String?
+  targetType   GuildChallengeTarget
+  targetValue  Int
+  currentValue Int                  @default(0)
+  startDate    DateTime
+  endDate      DateTime
+  status       GuildChallengeStatus @default(ACTIVE)
+  xpReward     Int                  @default(50)
+  createdAt    DateTime             @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, status])
+  @@map("guild_challenges")
+}
+
+enum GuildChallengeTarget {
+  COLLECTIVE_XP
+  COLLECTIVE_SAVINGS_DAYS
+  ALL_MEMBERS_STREAK
+}
+
+enum GuildChallengeStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+model GuildMessage {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+  @@map("guild_messages")
+}
+
+// ─── SOCIAL: ACHIEVEMENT FEED ─────────────────────────
+
+model AchievementEvent {
+  id          String              @id @default(cuid())
+  userId      String
+  eventType   AchievementEventType
+  displayText String
+  metadata    Json?
+  isPublic    Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions FeedReaction[]
+
+  @@index([isPublic, createdAt])
+  @@index([userId])
+  @@map("achievement_events")
+}
+
+enum AchievementEventType {
+  LEVEL_UP
+  BADGE_EARNED
+  STREAK_MILESTONE
+  CHALLENGE_COMPLETED
+  HEALTH_SCORE_TIER_UP
+  SAVINGS_MILESTONE
+}
+
+model FeedReaction {
+  id                 String   @id @default(cuid())
+  achievementEventId String
+  userId             String
+  emoji              String
+  createdAt          DateTime @default(now())
+
+  achievementEvent AchievementEvent @relation(fields: [achievementEventId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementEventId, userId])
+  @@map("feed_reactions")
+}
+
+// ─── SOCIAL: COMMUNITY CHALLENGES ─────────────────────
+
+model ChallengeDefinition {
+  id                  String        @id @default(cuid())
+  title               String
+  description         String
+  type                ChallengeType
+  month               Int?
+  seasonStart         DateTime?
+  completionCriteria  Json
+  xpReward            Int           @default(100)
+  exclusiveBadgeKey   String?
+  isActive            Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+
+  userProgress UserChallengeProgress[]
+
+  @@index([type, isActive])
+  @@map("challenge_definitions")
+}
+
+enum ChallengeType {
+  MONTHLY
+  SEASONAL
+  SPECIAL_EVENT
+}
+
+model UserChallengeProgress {
+  id                    String          @id @default(cuid())
+  userId                String
+  challengeDefinitionId String
+  progress              Int             @default(0)
+  status                ChallengeStatus @default(NOT_STARTED)
+  completedAt           DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge ChallengeDefinition @relation(fields: [challengeDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeDefinitionId])
+  @@index([userId, status])
+  @@map("user_challenge_progress")
+}
+
+enum ChallengeStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// ─── AI Features ─────────────────────────────────────────
+
+model AIConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  title     String      @default("New Chat")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  role           AIMessageRole
+  content        String
+  createdAt      DateTime       @default(now())
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}
+
+enum AIMessageRole {
+  USER
+  ASSISTANT
+}
+
+model SpendingPattern {
+  id        String              @id @default(cuid())
+  userId    String
+  type      SpendingPatternType
+  category  String
+  deviation Float
+  insight   String
+  period    String
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("spending_patterns")
+}
+
+enum SpendingPatternType {
+  OVERSPEND
+  UNDERSPEND
+  TREND
+}
+
+model BudgetSuggestion {
+  id               String                 @id @default(cuid())
+  userId           String
+  category         String
+  currentAmount    Float
+  suggestedAmount  Float
+  reasoning        String
+  estimatedSavings Float
+  status           BudgetSuggestionStatus @default(PENDING)
+  createdAt        DateTime               @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("budget_suggestions")
+}
+
+enum BudgetSuggestionStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+model ReceiptScan {
+  id                String            @id @default(cuid())
+  userId            String
+  merchantName      String?
+  totalAmount       Float?
+  scanDate          DateTime?
+  items             Json?
+  suggestedCategory String?
+  status            ReceiptScanStatus @default(PENDING)
+  createdAt         DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("receipt_scans")
+}
+
+enum ReceiptScanStatus {
+  PENDING
+  CONFIRMED
+  DISCARDED
+}
+
+model SeasonalEvent {
+  id            String                 @id @default(cuid())
+  name          String
+  description   String
+  theme         String
+  startDate     DateTime
+  endDate       DateTime
+  xpMultiplier  Float                  @default(1.0)
+  milestones    Json
+  badgeKeys     String[]
+  createdAt     DateTime               @default(now())
+  participants  UserSeasonalProgress[]
+
+  @@index([startDate, endDate])
+  @@map("seasonal_events")
+}
+
+model UserSeasonalProgress {
+  id              String        @id @default(cuid())
+  userId          String
+  seasonalEventId String
+  progress        Int           @default(0)
+  milestonesReached Int[]       @default([])
+  joinedAt        DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seasonalEvent SeasonalEvent @relation(fields: [seasonalEventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonalEventId])
+  @@index([userId])
+  @@map("user_seasonal_progress")
 }

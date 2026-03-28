@@ -33,12 +33,17 @@ export function BadgeCard({
       whileHover={badge.earned ? { scale: 1.05, y: -2 } : undefined}
       whileTap={badge.earned ? { scale: 0.98 } : undefined}
       className={cn(
-        'flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all',
+        'flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all relative',
         badge.earned
-          ? cn(tierColors[badge.tier], tierGlows[badge.tier], 'shadow-lg cursor-pointer')
-          : 'border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 cursor-default grayscale'
+          ? cn(tierColors[badge.tier], tierGlows[badge.tier], 'shadow-lg cursor-pointer ring-2 ring-offset-2 ring-amber-400 dark:ring-offset-slate-900')
+          : 'border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 cursor-default grayscale opacity-50'
       )}
     >
+      {badge.earned && (
+        <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white text-[10px] shadow-sm">
+          ✓
+        </span>
+      )}
       <span className="text-3xl" role="img" aria-label={badge.name}>
         {badge.icon}
       </span>

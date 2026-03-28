@@ -28,14 +28,14 @@ export const AVATAR_ITEMS: AvatarItemDef[] = [
   { name: 'Cap', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:10', imageUrl: '🧢' },
   { name: 'Helmet', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:12', imageUrl: '⛑️' },
   { name: 'Cowboy Hat', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:15', imageUrl: '🤠' },
-  { name: 'Wizard Hat', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:18', imageUrl: '🪄' },
+  { name: 'Wizard Hat', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:18', imageUrl: '�‍♂️' },
   { name: 'Graduation Cap', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:20', imageUrl: '🎓' },
   { name: 'Chef Hat', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:22', imageUrl: '👨‍🍳' },
   { name: 'Viking Helmet', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:25', imageUrl: '🪖' },
   { name: 'Space Helmet', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:28', imageUrl: '🚀' },
   { name: 'Ice Crown', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:30', imageUrl: '❄️' },
   { name: 'Fire Crown', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:35', imageUrl: '🔥' },
-  { name: 'Diamond Crown', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:40', imageUrl: '💎' },
+  { name: 'Diamond Crown', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:40', imageUrl: '�' },
   { name: 'Legendary Crown', type: 'HAT', unlockCondition: 'LEVEL', unlockValue: 'level:50', imageUrl: '✨' },
 
   // ─── BACKGROUNDS (10, BADGE) ──────────────────────────
@@ -65,7 +65,7 @@ export const AVATAR_ITEMS: AvatarItemDef[] = [
   { name: 'Monocle', type: 'ACCESSORY', unlockCondition: 'LEVEL', unlockValue: 'level:10', imageUrl: '🧐' },
   { name: 'Bow Tie', type: 'ACCESSORY', unlockCondition: 'LEVEL', unlockValue: 'level:15', imageUrl: '🎀' },
   { name: 'Shield', type: 'ACCESSORY', unlockCondition: 'BADGE', unlockValue: 'badge:safety_net', imageUrl: '🛡️' },
-  { name: 'Sword', type: 'ACCESSORY', unlockCondition: 'BADGE', unlockValue: 'badge:budget_legend', imageUrl: '⚔️' },
+  { name: 'Sword', type: 'ACCESSORY', unlockCondition: 'BADGE', unlockValue: 'badge:budget_legend', imageUrl: '🗡️' },
   { name: 'Wand', type: 'ACCESSORY', unlockCondition: 'LEVEL', unlockValue: 'level:20', imageUrl: '🪄' },
   { name: 'Telescope', type: 'ACCESSORY', unlockCondition: 'LEVEL', unlockValue: 'level:25', imageUrl: '🔭' },
   { name: 'Trophy', type: 'ACCESSORY', unlockCondition: 'BADGE', unlockValue: 'badge:millionaire', imageUrl: '🏆' },
@@ -74,7 +74,7 @@ export const AVATAR_ITEMS: AvatarItemDef[] = [
 
   // ─── PREMIUM (5) ──────────────────────────────────────
   { name: 'Golden Dragon', type: 'BASE', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '🐉' },
-  { name: 'Phoenix', type: 'BASE', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '🔥' },
+  { name: 'Phoenix', type: 'BASE', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '🦅' },
   { name: 'Unicorn', type: 'HAT', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '🦄' },
   { name: 'Galaxy', type: 'BACKGROUND', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '🌀' },
   { name: 'Emerald Frame', type: 'FRAME', unlockCondition: 'PREMIUM', unlockValue: null, imageUrl: '💚' },

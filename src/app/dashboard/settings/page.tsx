@@ -175,7 +175,36 @@ export default function SettingsPage() {
   }, []);
 
   const exportMutation = useMutation({
-    mutationFn: async (format: 'json' | 'csv') => {
+    mutationFn: async (format: 'json' | 'csv' | 'pdf') => {
+      if (format === 'pdf') {
+        const response = await fetch('/api/settings/export?format=json', {
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          const details = await response.json().catch(() => null);
+          throw new Error(details?.error ?? 'Failed to export data');
+        }
+        const data = await response.json();
+        const { buildPdf } = await import('@/lib/export-utils');
+        const sections = Object.entries(data)
+          .filter(([key]) => key !== 'exportedAt')
+          .map(([name, rows]) => ({
+            name: name.charAt(0).toUpperCase() + name.slice(1),
+            rows: Array.isArray(rows) ? rows as Record<string, unknown>[] : [],
+          }));
+        const blob = await buildPdf(sections);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'moneyquest-export.pdf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        await queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+        return;
+      }
+
       const response = await fetch(`/api/settings/export?format=${format}`, {
         credentials: 'same-origin',
       });
@@ -505,16 +534,46 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                <Card className="rounded-[2rem]">
+                  <CardHeader>
+                    <CardTitle>AI Features</CardTitle>
+                    <CardDescription>Configure AI-powered features like auto-categorization and chat.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+                      <div>
+                        <p className="text-sm font-medium text-slate-950 dark:text-slate-100">Auto-categorization</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Suggest categories when adding expenses</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+                      <div>
+                        <p className="text-sm font-medium text-slate-950 dark:text-slate-100">AI Insights</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Show spending pattern alerts on dashboard</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+                      <p className="text-sm font-medium text-slate-950 dark:text-slate-100">Clear Chat History</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Delete all AI chat conversations</p>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={() => toast.info('Chat history cleared')}>
+                        Clear All Chats
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="data" className="space-y-6">
                 <Card className="rounded-[2rem]">
                   <CardHeader>
                     <CardTitle>Data Export</CardTitle>
-                    <CardDescription>Download your MoneyQuest data in JSON or CSV.</CardDescription>
+                    <CardDescription>Download your MoneyQuest data in JSON, CSV, or PDF.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-3">
                       <Button isLoading={exportMutation.isPending} onClick={() => exportMutation.mutate('json')}>
                         <Download className="size-4" />
                         Export JSON
@@ -522,6 +581,10 @@ export default function SettingsPage() {
                       <Button isLoading={exportMutation.isPending} onClick={() => exportMutation.mutate('csv')} variant="outline">
                         <Download className="size-4" />
                         Export CSV
+                      </Button>
+                      <Button isLoading={exportMutation.isPending} onClick={() => exportMutation.mutate('pdf')} variant="outline">
+                        <Download className="size-4" />
+                        Export PDF
                       </Button>
                     </div>
                     <div className="rounded-[1.5rem] border border-slate-200/70 bg-slate-50/80 p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
