@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useWishlistQuery, useCreateWishlistItem, useAddFunds, useUpdateWishlistItem, useDeleteWishlistItem } from '@/hooks/api/useWishlistHooks';
 import WishlistCard from './WishlistCard';
@@ -14,7 +14,8 @@ export default function WishlistPage() {
   const createItem = useCreateWishlistItem();
   const addFunds = useAddFunds();
   const updateItem = useUpdateWishlistItem();
-  const deleteItem = useDeleteWishlistItem();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _deleteItem = useDeleteWishlistItem();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,13 +45,13 @@ export default function WishlistPage() {
     }
   });
 
-  const handleCreate = useCallback((data: { name: string; price: number; imageUrl?: string; productUrl?: string; priority: 'HIGH' | 'MEDIUM' | 'LOW' }) => {
+  const handleCreate = (data: { name: string; price: number; imageUrl?: string; productUrl?: string; priority: 'HIGH' | 'MEDIUM' | 'LOW' }) => {
     createItem.mutate(data, {
       onSuccess: () => setShowForm(false),
     });
-  }, [createItem]);
+  };
 
-  const handleAddFunds = useCallback((amount: number) => {
+  const handleAddFunds = (amount: number) => {
     if (!fundingId) return;
     addFunds.mutate(
       { id: fundingId, amount },
@@ -70,15 +71,15 @@ export default function WishlistPage() {
         },
       },
     );
-  }, [fundingId, addFunds]);
+  };
 
-  const handleMarkPurchased = useCallback((id: string) => {
+  const handleMarkPurchased = (id: string) => {
     updateItem.mutate({ id, data: { status: 'PURCHASED' as const } });
-  }, [updateItem]);
+  };
 
-  const handleEdit = useCallback((id: string) => {
+  const handleEdit = (id: string) => {
     setEditingId(id);
-  }, []);
+  };
 
   const editingItem = editingId ? items.find((i) => i.id === editingId) : null;
   const fundingItem = fundingId ? items.find((i) => i.id === fundingId) : null;

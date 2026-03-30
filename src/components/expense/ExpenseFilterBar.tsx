@@ -98,7 +98,7 @@ export function ExpenseFilterBar({
               {getExpenseRangeLabel(filters)}
             </span>
           </PopoverTrigger>
-          <PopoverContent className="w-[340px] space-y-4">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[340px] space-y-4">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Date range</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Use a preset or define a custom window.</p>
@@ -162,7 +162,7 @@ export function ExpenseFilterBar({
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-foreground/90">Card / Account</label>
-          <Select value={filters.accountId ?? 'all'} onValueChange={(value) => onFiltersChange({ ...filters, accountId: value === 'all' ? undefined : value, page: 1 })}>
+          <Select value={filters.accountId ?? 'all'} onValueChange={(value) => onFiltersChange({ ...filters, accountId: value === 'all' ? undefined : value ?? undefined, page: 1 })}>
             <SelectTrigger className="h-11 w-full lg:w-[220px]">
               <SelectValue placeholder="All accounts" />
             </SelectTrigger>

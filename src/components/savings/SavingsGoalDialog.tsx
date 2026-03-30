@@ -99,7 +99,7 @@ export function SavingsGoalDialog({ goal, isPending, onOpenChange, onSubmit, ope
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
+      <DialogContent className="sm:max-w-3xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
         <form key={goal?.id ?? 'new-goal'} onSubmit={handleSubmit}>
           <DialogHeader className="p-6 pb-2">
             <DialogTitle>{goal ? 'Edit Savings Goal' : 'Add Savings Goal'}</DialogTitle>

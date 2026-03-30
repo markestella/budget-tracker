@@ -14,8 +14,6 @@ export function IncomeCategoryBadge({ category, className }: IncomeCategoryBadge
   const { isDark } = useTheme();
 
   const getCategoryConfig = (category: IncomeCategory) => {
-    const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-    
     switch (category) {
       case 'SALARY':
         return {
@@ -86,7 +84,7 @@ export function IncomeCategoryBadge({ category, className }: IncomeCategoryBadge
   const config = getCategoryConfig(category);
 
   return (
-    <span className={`${config.className} ${className || ''}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className} ${className || ''}`}>
       {config.label}
     </span>
   );

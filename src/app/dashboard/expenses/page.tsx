@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useMemo, useState } from 'react';
+import { startTransition, Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -31,7 +31,7 @@ const initialExpensePayload = (): ExpensePayload => ({
   merchant: '',
 });
 
-export default function ExpensesPage() {
+function ExpensesPageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -306,5 +306,13 @@ export default function ExpensesPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function ExpensesPage() {
+  return (
+    <Suspense>
+      <ExpensesPageContent />
+    </Suspense>
   );
 }

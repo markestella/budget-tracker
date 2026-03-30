@@ -1,7 +1,6 @@
 import { resolveAuthenticatedUser } from '@/lib/session-user';
 import { checkPremium } from '@/lib/ai/premiumGate';
 import { checkRateLimit, generateText, isGeminiConfigured } from '@/lib/ai/geminiService';
-import { buildFinancialContext } from '@/lib/ai/contextBuilder';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse, errorResponse } from '@/lib/api-utils';
 

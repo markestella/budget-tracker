@@ -12,7 +12,7 @@ export function GuildsPage() {
   const [selectedGuildId, setSelectedGuildId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
-  const [joinGuildId, setJoinGuildId] = useState<string>();
+  const [joinGuildId] = useState<string>();
   const [discoverPage, setDiscoverPage] = useState(1);
 
   const { data: myGuilds, isLoading: myLoading } = useMyGuildsQuery();

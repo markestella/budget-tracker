@@ -1,7 +1,6 @@
 'use client';
 
 import { IncomeCategoryBadge } from './IncomeCategoryBadge';
-import Button from '@/components/ui/Button';
 import { useTheme } from '@/components/ThemeProvider';
 import { useState } from 'react';
 

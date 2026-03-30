@@ -68,7 +68,7 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-50 md:hidden">
+    <div className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-50 md:hidden">
       <div className="rounded-[1.75rem] border border-indigo-400/30 bg-slate-950/95 p-4 text-white shadow-2xl shadow-slate-950/30 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -80,7 +80,7 @@ export function InstallPrompt() {
           <button
             type="button"
             aria-label="Dismiss install prompt"
-            className="rounded-full border border-white/10 px-2 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+            className="min-h-11 rounded-full border border-white/10 px-3 py-2 text-xs text-slate-300 transition hover:bg-white/10"
             onClick={() => setDismissed(true)}
           >
             Not now

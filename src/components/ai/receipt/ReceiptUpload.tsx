@@ -54,6 +54,7 @@ export function ReceiptUpload({ onUpload, isUploading }: ReceiptUploadProps) {
         className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition hover:border-violet-400 hover:bg-violet-50/30 dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-violet-500"
       >
         {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="Receipt preview" className="max-h-48 rounded-lg object-contain" />
         ) : (
           <>

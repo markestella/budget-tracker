@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, Suspense, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -65,7 +65,7 @@ function buildSearchParams(filters: BudgetFilters) {
   return searchParams;
 }
 
-export default function BudgetsPage() {
+function BudgetsPageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -279,5 +279,13 @@ export default function BudgetsPage() {
         onSubmit={handleBudgetItemSubmit}
       />
     </DashboardLayout>
+  );
+}
+
+export default function BudgetsPage() {
+  return (
+    <Suspense>
+      <BudgetsPageContent />
+    </Suspense>
   );
 }

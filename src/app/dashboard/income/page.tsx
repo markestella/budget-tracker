@@ -150,6 +150,7 @@ const IncomePage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   // Handle source operations
@@ -772,10 +773,10 @@ const IncomePage: React.FC = () => {
           {/* Form Modals */}
           {showSourceForm && (
             <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className={`rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+              <div className={`rounded-lg w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto ${
                 isDark ? 'bg-gray-800' : 'bg-white'
               }`}>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <Typography variant="h3" color="dark" className="mb-6">
                     {editingSource ? 'Edit Income Source' : 'Add New Income Source'}
                   </Typography>
@@ -794,10 +795,10 @@ const IncomePage: React.FC = () => {
 
           {showRecordForm && (
             <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className={`rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+              <div className={`rounded-lg w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto ${
                 isDark ? 'bg-gray-800' : 'bg-white'
               }`}>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <Typography variant="h3" color="dark" className="mb-6">
                     {editingRecord ? 'Edit Payment Record' : 'Add New Payment Record'}
                   </Typography>

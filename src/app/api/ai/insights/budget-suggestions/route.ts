@@ -2,8 +2,7 @@ import { resolveAuthenticatedUser } from '@/lib/session-user';
 import { checkPremium } from '@/lib/ai/premiumGate';
 import { checkRateLimit, generateText, isGeminiConfigured } from '@/lib/ai/geminiService';
 import { prisma } from '@/lib/prisma';
-import { jsonResponse, errorResponse, validateRequest } from '@/lib/api-utils';
-import { budgetSuggestionApplySchema } from '@/lib/validations/ai';
+import { jsonResponse, errorResponse } from '@/lib/api-utils';
 
 export async function GET() {
   const auth = await resolveAuthenticatedUser();
@@ -78,18 +77,43 @@ ${Object.entries(avgSpending)
   .map(([cat, avg]) => `- ${cat}: budget ₱${(budgetMap[cat] ?? 0).toLocaleString()}, avg spending ₱${Math.round(avg).toLocaleString()}`)
   .join('\n')}
 
-For each category, suggest an optimized budget amount with reasoning. Return JSON array with objects: {category, currentAmount, suggestedAmount, reasoning, estimatedSavings}. Return ONLY valid JSON array, no markdown.`;
+Valid categories: ${Object.entries(avgSpending).map(([cat]) => cat).join(', ')}
+
+For each category, suggest an optimized budget amount with reasoning. Use ONLY the exact category names listed above. Return a JSON array with objects: {"category": string, "currentAmount": number, "suggestedAmount": number, "reasoning": string, "estimatedSavings": number}. Return ONLY the raw JSON array — no markdown, no code fences, no extra text.`;
 
   try {
     const response = await generateText(prompt);
-    const cleaned = response.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    // Strip any markdown fences and find the JSON array
+    let cleaned = response.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    // Find the first [ and last ] to extract just the JSON array
+    const startIdx = cleaned.indexOf('[');
+    const endIdx = cleaned.lastIndexOf(']');
+    if (startIdx === -1 || endIdx === -1) {
+      return errorResponse('Failed to parse AI response', 503);
+    }
+    cleaned = cleaned.slice(startIdx, endIdx + 1);
+
     const parsed: { category: string; currentAmount: number; suggestedAmount: number; reasoning: string; estimatedSavings: number }[] = JSON.parse(cleaned);
+
+    // Validate each suggestion has required fields and valid category
+    const validCategories = new Set(Object.keys(avgSpending));
+    const validSuggestions = parsed.filter(
+      (s) =>
+        typeof s.category === 'string' &&
+        typeof s.suggestedAmount === 'number' &&
+        typeof s.reasoning === 'string' &&
+        validCategories.has(s.category)
+    );
+
+    if (validSuggestions.length === 0) {
+      return errorResponse('No valid suggestions could be generated', 503);
+    }
 
     // Clear old pending suggestions
     await prisma.budgetSuggestion.deleteMany({ where: { userId: auth.user.id, status: 'PENDING' } });
 
     const suggestions = [];
-    for (const s of parsed) {
+    for (const s of validSuggestions) {
       const suggestion = await prisma.budgetSuggestion.create({
         data: {
           userId: auth.user.id,
@@ -105,7 +129,8 @@ For each category, suggest an optimized budget amount with reasoning. Return JSO
     }
 
     return jsonResponse({ suggestions });
-  } catch {
+  } catch (err) {
+    console.error('Budget suggestions generation failed:', err);
     return errorResponse('Failed to generate budget suggestions', 503);
   }
 }

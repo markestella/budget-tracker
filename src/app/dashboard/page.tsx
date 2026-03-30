@@ -9,8 +9,19 @@ import {
   ReceiptText,
   Target,
   Wallet,
+  Star,
+  Sparkles,
+  Banknote,
+  Trophy,
+  Users,
+  Swords,
+  Brain,
+  Gamepad2,
+  ChevronRight,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { BudgetHealthBar } from '@/components/dashboard/BudgetHealthBar';
@@ -77,6 +88,7 @@ interface StatConfig {
   value: (data: DashboardSummary) => string;
   accentClass: string;
   trendIntent?: 'good-when-up' | 'good-when-down';
+  href: string;
 }
 
 const statConfigs: StatConfig[] = [
@@ -87,6 +99,7 @@ const statConfigs: StatConfig[] = [
     value: (data) => formatCurrency(data.totalIncomeThisMonth),
     accentClass:
       'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-300 dark:ring-emerald-400/20',
+    href: '/dashboard/income',
   },
   {
     key: 'totalExpensesThisMonth',
@@ -96,6 +109,7 @@ const statConfigs: StatConfig[] = [
     accentClass:
       'bg-rose-500/10 text-rose-600 ring-1 ring-rose-500/20 dark:text-rose-300 dark:ring-rose-400/20',
     trendIntent: 'good-when-down',
+    href: '/dashboard/expenses',
   },
   {
     key: 'netSavings',
@@ -104,6 +118,7 @@ const statConfigs: StatConfig[] = [
     value: (data) => formatCurrency(data.netSavings),
     accentClass:
       'bg-sky-500/10 text-sky-600 ring-1 ring-sky-500/20 dark:text-sky-300 dark:ring-sky-400/20',
+    href: '/dashboard/accounts',
   },
   {
     key: 'budgetUsedPercent',
@@ -113,6 +128,7 @@ const statConfigs: StatConfig[] = [
     accentClass:
       'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-300 dark:ring-amber-400/20',
     trendIntent: 'good-when-down',
+    href: '/dashboard/budgets',
   },
 ];
 
@@ -148,7 +164,8 @@ function StatCard({
 
   return (
     <FadeIn delay={delay}>
-      <Card className="h-full overflow-hidden border-white/60 bg-white/85 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800/80 dark:bg-slate-950/85">
+      <Link href={config.href}>
+      <Card className="h-full overflow-hidden border-white/60 bg-white/85 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800/80 dark:bg-slate-950/85 transition-shadow hover:shadow-[0_22px_70px_-25px_rgba(15,23,42,0.55)] cursor-pointer">
         <CardHeader className="flex flex-row items-start justify-between gap-4 pb-4">
           <div className="space-y-1">
             <CardDescription>{config.label}</CardDescription>
@@ -176,13 +193,95 @@ function StatCard({
           </div>
         </CardContent>
       </Card>
+      </Link>
     </FadeIn>
+  );
+}
+
+function QuickAccessCards() {
+  const router = useRouter();
+  return (
+    <div className="grid gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      {/* Finance Card */}
+      <FadeIn delay={0.22}>
+        <Link href="/dashboard/budgets">
+          <Card className="group h-full border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-white/85 shadow-[0_12px_40px_-20px_rgba(15,23,42,0.25)] dark:border-emerald-900/40 dark:from-emerald-950/40 dark:to-slate-950/85 transition-all hover:shadow-[0_16px_50px_-15px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 cursor-pointer">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="rounded-2xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/20 dark:ring-emerald-400/20">
+                  <Banknote className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-emerald-400 transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <CardTitle className="mt-3 text-lg">Finance</CardTitle>
+              <CardDescription>Manage budgets, track expenses, and monitor your income all in one place.</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+      </FadeIn>
+
+      {/* MoneyQuest Card */}
+      <FadeIn delay={0.26}>
+        <div onClick={() => router.push('/dashboard/game')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') router.push('/dashboard/game'); }}>
+          <Card className="group h-full border-amber-200/60 bg-gradient-to-br from-amber-50/80 to-white/85 shadow-[0_12px_40px_-20px_rgba(15,23,42,0.25)] dark:border-amber-900/40 dark:from-amber-950/40 dark:to-slate-950/85 transition-all hover:shadow-[0_16px_50px_-15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 cursor-pointer">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="rounded-2xl bg-amber-500/10 p-3 ring-1 ring-amber-500/20 dark:ring-amber-400/20">
+                  <Gamepad2 className="h-6 w-6 text-amber-600 dark:text-amber-300" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-amber-400 transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <CardTitle className="mt-3 text-lg">MoneyQuest</CardTitle>
+              <CardDescription>Level up your finances with quests, earn XP, and compete on the leaderboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard' },
+                  { icon: Swords, label: 'Challenges', href: '/dashboard/challenges' },
+                  { icon: Users, label: 'Guilds', href: '/dashboard/guilds' },
+                  { icon: Brain, label: 'Quiz', href: '/dashboard/personality' },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 rounded-full bg-amber-100/80 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-200/80 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-800/40"
+                  >
+                    <item.icon className="h-3 w-3" />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </FadeIn>
+
+      {/* AI Insights Card */}
+      <FadeIn delay={0.3}>
+        <Link href="/dashboard/ai/insights">
+          <Card className="group h-full border-violet-200/60 bg-gradient-to-br from-violet-50/80 to-white/85 shadow-[0_12px_40px_-20px_rgba(15,23,42,0.25)] dark:border-violet-900/40 dark:from-violet-950/40 dark:to-slate-950/85 transition-all hover:shadow-[0_16px_50px_-15px_rgba(139,92,246,0.3)] hover:-translate-y-0.5 cursor-pointer sm:col-span-2 xl:col-span-1">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="rounded-2xl bg-violet-500/10 p-3 ring-1 ring-violet-500/20 dark:ring-violet-400/20">
+                  <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-300" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-violet-400 transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <CardTitle className="mt-3 text-lg">AI Insights</CardTitle>
+              <CardDescription>Smart financial analysis, cash flow predictions, and receipt scanning powered by AI.</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+      </FadeIn>
+    </div>
   );
 }
 
 function LoadingDashboard() {
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, index) => (
         <Card key={index} className="border-white/60 bg-white/75 dark:border-slate-800/80 dark:bg-slate-950/75">
           <CardHeader className="animate-pulse space-y-4">
@@ -290,8 +389,8 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.15),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_28%)] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-          <FadeIn className="rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-[0_25px_80px_-40px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/80 sm:p-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 md:gap-8">
+          <FadeIn className="rounded-[2rem] border border-white/60 bg-white/80 p-4 shadow-[0_25px_80px_-40px_rgba(15,23,42,0.55)] backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/80 sm:p-6 md:p-8">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.24em] text-sky-600 dark:text-sky-300">
@@ -320,7 +419,7 @@ export default function DashboardPage() {
 
           {!isLoading && data ? (
             <>
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 {statConfigs.map((config, index) => (
                   <StatCard
                     key={config.key}
@@ -331,6 +430,8 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
+
+              <QuickAccessCards />
 
               <FadeIn delay={0.26}>
                 <BudgetHealthBar
@@ -351,7 +452,7 @@ export default function DashboardPage() {
                 <DailyQuote />
               </FadeIn>
 
-              <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+              <div className="grid gap-3 sm:gap-4 md:gap-6 xl:grid-cols-[1.35fr_0.95fr]">
                 {chartsLoading ? <ChartsLoadingState /> : null}
 
                 {!chartsLoading && chartsError ? (
@@ -377,7 +478,7 @@ export default function DashboardPage() {
                 </FadeIn>
               ) : null}
 
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 md:gap-6 xl:grid-cols-2">
                 <FadeIn delay={0.52}>
                   <ErrorBoundary>
                     <HealthScoreWidget />
@@ -390,7 +491,7 @@ export default function DashboardPage() {
                 </FadeIn>
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 md:gap-6 xl:grid-cols-2">
                 <FadeIn delay={0.6}>
                   <ErrorBoundary>
                     <MiniLeaderboardRank />

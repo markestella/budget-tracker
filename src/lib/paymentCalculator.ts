@@ -228,7 +228,6 @@ export class PaymentCalculator {
     const nextPayment = new Date(fromDate);
     const currentYear = nextPayment.getFullYear();
     const currentMonth = nextPayment.getMonth();
-    const currentDay = nextPayment.getDate();
 
     // Filter out days with zero amounts if using manual amounts
     let validScheduleDays = source.scheduleDays;

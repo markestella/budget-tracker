@@ -60,11 +60,11 @@ export function CardUsageSummary({ items }: CardUsageSummaryProps) {
         </CardHeader>
         <CardContent>
           {chartData.length === 0 ? (
-            <div className="flex h-64 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-slate-50/80 px-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+            <div className="flex h-48 sm:h-56 md:h-64 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-slate-50/80 px-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
               No linked account spending to chart yet.
             </div>
           ) : (
-            <div className="h-64">
+            <div className="h-48 sm:h-56 md:h-64">
               <ResponsiveContainer height="100%" width="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 8, left: 8, bottom: 0 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="4 4" vertical={false} />

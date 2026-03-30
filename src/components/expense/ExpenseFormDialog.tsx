@@ -117,7 +117,7 @@ export function ExpenseFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
+      <DialogContent className="sm:max-w-2xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
         <form key={expense?.id ?? 'new'} onSubmit={handleSubmit}>
           <DialogHeader className="p-6 pb-2">
             <DialogTitle>{expense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>

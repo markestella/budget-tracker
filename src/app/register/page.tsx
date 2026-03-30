@@ -119,7 +119,7 @@ const RegisterPage: React.FC = () => {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (error) {
+    } catch (_error) {
       setErrors({ general: 'An unexpected error occurred' });
     } finally {
       setIsLoading(false);

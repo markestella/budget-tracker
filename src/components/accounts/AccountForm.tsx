@@ -162,7 +162,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
       tabIndex={-1}
     >
       <div className="fixed inset-0" onClick={handleBackdropClick} />
-      <div className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-xl border ${
+      <div className={`relative w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-xl border ${
         isDark 
           ? 'bg-gray-800 border-gray-700' 
           : 'bg-white border-gray-200'

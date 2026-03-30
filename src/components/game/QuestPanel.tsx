@@ -1,10 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useActiveQuestsQuery, useCheckQuestsMutation, UserQuestData } from '@/hooks/api/useGameQuests';
 import Button from '@/components/ui/Button';
 
@@ -97,16 +96,31 @@ function QuestList({ quests }: { quests: UserQuestData[] }) {
 export function QuestPanel({ className }: { className?: string }) {
   const { data: quests, isLoading } = useActiveQuestsQuery();
   const checkMutation = useCheckQuestsMutation();
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   const daily = (quests ?? []).filter((q) => q.questDefinition.type === 'DAILY');
   const weekly = (quests ?? []).filter((q) => q.questDefinition.type === 'WEEKLY');
   const monthly = (quests ?? []).filter((q) => q.questDefinition.type === 'MONTHLY');
 
+  const tabs = [
+    { key: 'daily' as const, label: 'Daily', emoji: '📋', quests: daily },
+    { key: 'weekly' as const, label: 'Weekly', emoji: '📅', quests: weekly },
+    { key: 'monthly' as const, label: 'Monthly', emoji: '🗓️', quests: monthly },
+  ];
+
+  const activeQuests = tabs.find((t) => t.key === activeTab)?.quests ?? [];
+
   return (
-    <Card className={cn('', className)}>
-      <CardHeader className="pb-2">
+    <div className={cn(
+      'rounded-2xl border border-white/60 bg-white/80 shadow-lg backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/80 overflow-hidden',
+      className
+    )}>
+      {/* Header */}
+      <div className="bg-gradient-to-b from-blue-50/80 to-transparent px-6 pt-6 pb-4 dark:from-blue-950/20 dark:to-transparent">
         <div className="flex items-center justify-between">
-          <CardTitle>Quests</CardTitle>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            ⚔️ Quests
+          </h3>
           <Button
             variant="ghost"
             size="sm"
@@ -116,8 +130,31 @@ export function QuestPanel({ className }: { className?: string }) {
             {checkMutation.isPending ? 'Checking...' : 'Refresh'}
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+
+      {/* Tab Navigation — pill-style horizontal */}
+      <div className="px-4 pt-2">
+        <div className="flex gap-1.5 rounded-xl bg-slate-100/80 p-1 dark:bg-slate-800/60">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={cn(
+                'flex-1 rounded-lg py-2 text-xs font-medium transition-all duration-150',
+                activeTab === t.key
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              )}
+            >
+              <span className="block text-base leading-none">{t.emoji}</span>
+              <span className="mt-0.5 block">{t.label} ({t.quests.length})</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quest List */}
+      <div className="px-4 py-4">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -125,30 +162,9 @@ export function QuestPanel({ className }: { className?: string }) {
             ))}
           </div>
         ) : (
-          <Tabs defaultValue="daily">
-            <TabsList>
-              <TabsTrigger value="daily">
-                Daily ({daily.length})
-              </TabsTrigger>
-              <TabsTrigger value="weekly">
-                Weekly ({weekly.length})
-              </TabsTrigger>
-              <TabsTrigger value="monthly">
-                Monthly ({monthly.length})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="daily" className="mt-3">
-              <QuestList quests={daily} />
-            </TabsContent>
-            <TabsContent value="weekly" className="mt-3">
-              <QuestList quests={weekly} />
-            </TabsContent>
-            <TabsContent value="monthly" className="mt-3">
-              <QuestList quests={monthly} />
-            </TabsContent>
-          </Tabs>
+          <QuestList quests={activeQuests} />
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

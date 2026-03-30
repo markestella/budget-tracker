@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { AchievementEventType } from '@prisma/client';
+import type { AchievementEventType, Prisma } from '@prisma/client';
 
 export async function createAchievementEvent({
   userId,
@@ -23,7 +23,7 @@ export async function createAchievementEvent({
       userId,
       eventType,
       displayText,
-      metadata: metadata ?? undefined,
+      metadata: (metadata as Prisma.InputJsonValue) ?? undefined,
       isPublic: optIn?.isOptedIn ?? false,
     },
   });

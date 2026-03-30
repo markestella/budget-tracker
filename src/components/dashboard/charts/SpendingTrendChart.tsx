@@ -47,11 +47,11 @@ export function SpendingTrendChart({ data }: { data: DashboardMonthlyTrendDatum[
       </CardHeader>
       <CardContent>
         {isEmpty ? (
-          <div className="flex h-72 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-slate-50/80 px-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+          <div className="flex h-48 sm:h-56 md:h-64 lg:h-72 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-slate-50/80 px-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
             No monthly trend data is available yet.
           </div>
         ) : (
-          <div className="h-72">
+          <div className="h-48 sm:h-56 md:h-64 lg:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="4 4" vertical={false} />

@@ -4,7 +4,7 @@ import { jsonResponse, errorResponse, validateRequest } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { createGuildSchema } from '@/lib/validations/social';
 import { awardXP } from '@/lib/game/xpService';
-import { createAchievementEvent } from '@/lib/social/achievementEvents';
+// import { createAchievementEvent } from '@/lib/social/achievementEvents';
 import { NextRequest } from 'next/server';
 
 // POST — create guild
@@ -52,12 +52,13 @@ export async function POST(req: NextRequest) {
 
   // Award XP for guild creation
   await awardXP(userId, 'CREATE_GUILD');
-  await createAchievementEvent({
-    userId,
-    eventType: 'GUILD_CREATED',
-    displayText: `Created the guild "${name}"`,
-    metadata: { guildId: guild.id, guildName: name },
-  });
+  // TODO: Add GUILD_CREATED to AchievementEventType enum before enabling
+  // await createAchievementEvent({
+  //   userId,
+  //   eventType: 'GUILD_CREATED',
+  //   displayText: `Created the guild "${name}"`,
+  //   metadata: { guildId: guild.id, guildName: name },
+  // });
 
   return jsonResponse(guild, { status: 201 });
 }

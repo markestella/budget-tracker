@@ -201,11 +201,11 @@ export function SavingsGoalCard({ goal, isDeleting, isSubmittingTransaction, onD
                 </CardHeader>
                 <CardContent>
                   {chartData.length === 0 ? (
-                    <div className="flex h-64 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-white/70 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
+                    <div className="flex h-48 sm:h-56 md:h-64 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300/80 bg-white/70 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
                       No transactions logged yet.
                     </div>
                   ) : (
-                    <div className="h-64">
+                    <div className="h-48 sm:h-56 md:h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
                           <XAxis dataKey="date" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} tickLine={false} axisLine={false} />

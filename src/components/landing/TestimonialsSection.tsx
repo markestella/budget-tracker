@@ -43,7 +43,7 @@ export function TestimonialsSection() {
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
             Testimonials
           </p>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
             Loved by Thousands
           </h2>
         </motion.div>
@@ -59,7 +59,7 @@ export function TestimonialsSection() {
               transition={{ delay: i * 0.1 }}
               className="text-center"
             >
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{s.value}</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{s.value}</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">{s.label}</p>
             </motion.div>
           ))}

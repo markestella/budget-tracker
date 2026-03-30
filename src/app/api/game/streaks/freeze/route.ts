@@ -1,5 +1,5 @@
 import { jsonResponse, errorResponse } from '@/lib/api-utils';
-import { useStreakFreeze } from '@/lib/game/streaks';
+import { applyStreakFreeze } from '@/lib/game/streaks';
 import { resolveAuthenticatedUser } from '@/lib/session-user';
 
 export async function POST() {
@@ -7,7 +7,7 @@ export async function POST() {
     const auth = await resolveAuthenticatedUser();
     if ('response' in auth) return auth.response;
 
-    const result = await useStreakFreeze(auth.user.id);
+    const result = await applyStreakFreeze(auth.user.id);
 
     if (!result.success) {
       return errorResponse('No streak freezes remaining this week', 400);

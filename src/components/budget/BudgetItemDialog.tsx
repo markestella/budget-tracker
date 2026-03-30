@@ -254,7 +254,7 @@ export function BudgetItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
+      <DialogContent className="sm:max-w-2xl rounded-[2rem] bg-white p-0 dark:bg-slate-950">
         <BudgetItemDialogContent
           key={`${item?.id ?? 'new'}-${resolvedType}-${open ? 'open' : 'closed'}`}
           accounts={accounts}

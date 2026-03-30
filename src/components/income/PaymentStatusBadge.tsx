@@ -14,8 +14,6 @@ export function PaymentStatusBadge({ status, className }: PaymentStatusBadgeProp
   const { isDark } = useTheme();
 
   const getStatusConfig = (status: PaymentStatus) => {
-    const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-    
     switch (status) {
       case 'RECEIVED':
         return {
@@ -51,7 +49,7 @@ export function PaymentStatusBadge({ status, className }: PaymentStatusBadgeProp
   const config = getStatusConfig(status);
 
   return (
-    <span className={`${config.className} ${className || ''}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className} ${className || ''}`}>
       {config.label}
     </span>
   );

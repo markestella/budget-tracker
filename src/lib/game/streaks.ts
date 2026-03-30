@@ -77,7 +77,7 @@ export async function updateStreak(userId: string): Promise<{
   return { currentStreak: newStreak, longestStreak: newLongest, milestoneReached };
 }
 
-export async function useStreakFreeze(userId: string): Promise<{ success: boolean; remaining: number }> {
+export async function applyStreakFreeze(userId: string): Promise<{ success: boolean; remaining: number }> {
   const maxFreezes = 1; // Free tier
   const weekOf = getStartOfWeek(new Date());
 

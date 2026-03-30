@@ -32,8 +32,6 @@ function getTier(score: number): TierInfo {
 export async function calculateHealthScore(userId: string): Promise<HealthScoreResult> {
   const now = new Date();
   const startOfMonth = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1);
-  const endOfMonth = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0);
-  const daysInMonth = endOfMonth.getUTCDate();
   const currentDay = now.getUTCDate();
 
   // Parallel queries

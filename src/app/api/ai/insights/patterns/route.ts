@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { resolveAuthenticatedUser } from '@/lib/session-user';
 import { checkPremium } from '@/lib/ai/premiumGate';
 import { checkRateLimit, generateText, isGeminiConfigured } from '@/lib/ai/geminiService';

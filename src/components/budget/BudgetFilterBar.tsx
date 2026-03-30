@@ -137,7 +137,7 @@ export function BudgetFilterBar({
               {getRangeLabel(filters)}
             </span>
           </PopoverTrigger>
-          <PopoverContent className="w-[320px] space-y-4">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] space-y-4">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Date range</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
