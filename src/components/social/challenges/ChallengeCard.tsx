@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useJoinChallengeMutation, useTrackChallengeMutation, type ChallengeDefinition } from '@/hooks/api/useChallengeHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import { useState } from 'react';
 
 interface ChallengeCardProps {
@@ -11,12 +12,14 @@ interface ChallengeCardProps {
 export function ChallengeCard({ challenge }: ChallengeCardProps) {
   const joinMutation = useJoinChallengeMutation();
   const trackMutation = useTrackChallengeMutation();
+  const guardMutation = useDemoGuard();
   const [progress, setProgress] = useState(challenge.userProgress?.progress ?? 0);
 
   const isJoined = !!challenge.userProgress;
   const isCompleted = challenge.userProgress?.status === 'COMPLETED';
 
   const handleTrack = () => {
+    if (!guardMutation()) return;
     trackMutation.mutate({ challengeId: challenge.id, progress });
   };
 
@@ -71,7 +74,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
       <div className="mt-4">
         {!isJoined ? (
           <button
-            onClick={() => joinMutation.mutate(challenge.id)}
+            onClick={() => { if (!guardMutation()) return; joinMutation.mutate(challenge.id); }}
             disabled={joinMutation.isPending}
             className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 text-sm font-medium text-white shadow transition hover:shadow-md disabled:opacity-50"
           >

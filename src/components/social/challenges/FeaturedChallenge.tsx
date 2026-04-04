@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import type { ChallengeDefinition } from '@/hooks/api/useChallengeHooks';
 import { useJoinChallengeMutation } from '@/hooks/api/useChallengeHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 
 interface FeaturedChallengeProps {
   challenge: ChallengeDefinition;
@@ -10,6 +11,7 @@ interface FeaturedChallengeProps {
 
 export function FeaturedChallenge({ challenge }: FeaturedChallengeProps) {
   const joinMutation = useJoinChallengeMutation();
+  const guardMutation = useDemoGuard();
   const isJoined = !!challenge.userProgress;
   const isCompleted = challenge.userProgress?.status === 'COMPLETED';
 
@@ -63,7 +65,7 @@ export function FeaturedChallenge({ challenge }: FeaturedChallengeProps) {
 
         {!isJoined && !isCompleted && (
           <button
-            onClick={() => joinMutation.mutate(challenge.id)}
+            onClick={() => { if (!guardMutation()) return; joinMutation.mutate(challenge.id); }}
             disabled={joinMutation.isPending}
             className="mt-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 text-sm font-medium text-white shadow-md transition hover:shadow-lg disabled:opacity-50"
           >

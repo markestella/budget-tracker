@@ -14,6 +14,7 @@ import { CategoryBudgetManager } from '@/components/budget/CategoryBudgetManager
 import { IncomeAllocationCard } from '@/components/budget/IncomeAllocationCard';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { useAccountsQuery } from '@/hooks/api/useAccountHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import {
   useBudgetItemsQuery,
   useBudgetSummaryQuery,
@@ -84,6 +85,7 @@ function BudgetsPageContent() {
   const updateBudgetItemMutation = useUpdateBudgetItemMutation();
   const deleteBudgetItemMutation = useDeleteBudgetItemMutation();
   const categoryBudgetMutation = useCategoryBudgetMutation();
+  const guardMutation = useDemoGuard();
 
   useEffect(() => {
     setSearchValue(filters.search ?? '');
@@ -134,6 +136,7 @@ function BudgetsPageContent() {
   }
 
   async function handleBudgetItemSubmit(payload: BudgetItemPayload) {
+    if (!guardMutation()) return;
     try {
       if (editingItem) {
         await updateBudgetItemMutation.mutateAsync({
@@ -155,6 +158,7 @@ function BudgetsPageContent() {
   }
 
   async function handleDelete(item: BudgetItem) {
+    if (!guardMutation()) return;
     if (!window.confirm(`Delete ${item.description}?`)) {
       return;
     }
@@ -169,6 +173,7 @@ function BudgetsPageContent() {
   }
 
   async function handleMarkPaid(item: BudgetItem) {
+    if (!guardMutation()) return;
     try {
       await updateBudgetItemMutation.mutateAsync({
         id: item.id,
@@ -182,6 +187,7 @@ function BudgetsPageContent() {
   }
 
   async function handleSaveCategory(category: BudgetCategory, monthlyLimit: number, rollover: boolean) {
+    if (!guardMutation()) return;
     try {
       setSavingCategory(category);
       await categoryBudgetMutation.mutateAsync({

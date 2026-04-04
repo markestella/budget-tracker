@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../ThemeProvider';
 import { sidebarNavItems, type NavItem } from './nav-config';
+import { useDemo } from '@/components/providers/DemoProvider';
 
 // Re-export for backward compatibility
 export type SidebarItem = NavItem;
@@ -19,6 +20,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { isDark } = useTheme();
+  const { isDemo } = useDemo();
+  const demoSuffix = isDemo ? '?demo=true' : '';
 
   const sidebarWidth = isCollapsed ? 'w-16' : 'w-64';
   const sidebarBg = isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200';
@@ -84,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
 
           return (
-            <Link key={item.id} href={item.href} title={isCollapsed ? item.label : undefined}>
+            <Link key={item.id} href={`${item.href}${demoSuffix}`} title={isCollapsed ? item.label : undefined}>
               <div className={`relative group flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-lg transition-colors cursor-pointer ${activeClasses}`}>
                 <div className="flex-shrink-0">
                   {item.icon}

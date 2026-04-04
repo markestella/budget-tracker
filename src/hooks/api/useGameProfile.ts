@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_GAME_PROFILE } from '@/lib/demo-data';
 
 export interface GameProfile {
   id: string;
@@ -25,8 +27,10 @@ export const gameProfileKeys = {
 };
 
 export function useGameProfileQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: gameProfileKeys.detail(),
-    queryFn: () => apiClient<GameProfile>('/api/game/profile'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_GAME_PROFILE) : () => apiClient<GameProfile>('/api/game/profile'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }

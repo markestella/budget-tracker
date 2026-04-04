@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGameStreaksQuery, useStreakFreezeMutation } from '@/hooks/api/useGameStreaks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import Button from '@/components/ui/Button';
 
 function getFlameIntensity(streak: number) {
@@ -16,6 +17,7 @@ function getFlameIntensity(streak: number) {
 export function StreakDisplay({ className }: { className?: string }) {
   const { data: streak, isLoading } = useGameStreaksQuery();
   const freezeMutation = useStreakFreezeMutation();
+  const guardMutation = useDemoGuard();
 
   if (isLoading || !streak) {
     return (
@@ -65,7 +67,7 @@ export function StreakDisplay({ className }: { className?: string }) {
           variant="outline"
           size="sm"
           className="ml-auto shrink-0"
-          onClick={() => freezeMutation.mutate()}
+          onClick={() => { if (!guardMutation()) return; freezeMutation.mutate(); }}
           disabled={freezeMutation.isPending}
         >
           <Shield className="mr-1 h-3.5 w-3.5" />

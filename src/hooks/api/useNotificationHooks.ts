@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_NOTIFICATION_PREFERENCES } from '@/lib/demo-data';
 import type {
   NotificationPreferenceRecord,
   NotificationSendPayload,
@@ -37,9 +39,11 @@ const sendTestNotification = (payload: NotificationSendPayload) =>
   });
 
 export function useNotificationPreferencesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
-    queryFn: fetchPreferences,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_NOTIFICATION_PREFERENCES) : fetchPreferences,
     queryKey: notificationKeys.preferences(),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

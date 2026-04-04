@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useActiveQuestsQuery, useCheckQuestsMutation, UserQuestData } from '@/hooks/api/useGameQuests';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import Button from '@/components/ui/Button';
 
 function timeRemaining(expiresAt: string): string {
@@ -96,6 +97,7 @@ function QuestList({ quests }: { quests: UserQuestData[] }) {
 export function QuestPanel({ className }: { className?: string }) {
   const { data: quests, isLoading } = useActiveQuestsQuery();
   const checkMutation = useCheckQuestsMutation();
+  const guardMutation = useDemoGuard();
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   const daily = (quests ?? []).filter((q) => q.questDefinition.type === 'DAILY');
@@ -124,7 +126,7 @@ export function QuestPanel({ className }: { className?: string }) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => checkMutation.mutate()}
+            onClick={() => { if (!guardMutation()) return; checkMutation.mutate(); }}
             disabled={checkMutation.isPending}
           >
             {checkMutation.isPending ? 'Checking...' : 'Refresh'}

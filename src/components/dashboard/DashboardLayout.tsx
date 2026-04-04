@@ -2,14 +2,14 @@
 
 import React, { useState, Suspense } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
 import { useTheme } from '../ThemeProvider';
 import ThemeToggle from '../ThemeToggle';
 import { ChatDrawer } from '../ai/chat/ChatDrawer';
-import { DemoProvider } from '@/components/providers/DemoProvider';
+import { useDemo } from '@/components/providers/DemoProvider';
 import { DemoBanner } from './DemoBanner';
 import { BottomTabBar } from './BottomTabBar';
 import { MobileFinanceNav } from './MobileFinanceNav';
@@ -26,8 +26,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { isDark } = useTheme();
-  const searchParams = useSearchParams();
-  const isDemo = searchParams.get('demo') === 'true';
+  const { isDemo } = useDemo();
   const showFinanceLayout = isFinanceRoute(pathname);
 
   useEffect(() => {
@@ -221,10 +220,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <ChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
-
-  if (isDemo) {
-    return <DemoProvider>{content}</DemoProvider>;
-  }
 
   return content;
 };

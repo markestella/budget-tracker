@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_DASHBOARD, DEMO_CHARTS } from '@/lib/demo-data';
 
 export type DashboardTrendDirection = 'up' | 'down' | 'flat';
 
@@ -66,15 +68,19 @@ const fetchDashboardSummary = () => apiClient<DashboardSummary>('/api/dashboard'
 const fetchDashboardCharts = () => apiClient<DashboardCharts>('/api/dashboard/charts');
 
 export function useDashboardQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: dashboardKeys.summary(),
-    queryFn: fetchDashboardSummary,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_DASHBOARD) : fetchDashboardSummary,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useDashboardChartsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: dashboardKeys.charts(),
-    queryFn: fetchDashboardCharts,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_CHARTS) : fetchDashboardCharts,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }

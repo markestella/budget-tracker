@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_STREAKS } from '@/lib/demo-data';
 
 export interface StreakData {
   current: number;
@@ -18,9 +20,11 @@ export const streakKeys = {
 };
 
 export function useGameStreaksQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: streakKeys.detail(),
-    queryFn: () => apiClient<StreakData>('/api/game/streaks'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_STREAKS) : () => apiClient<StreakData>('/api/game/streaks'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_SPENDING_PATTERNS, DEMO_BUDGET_SUGGESTIONS, DEMO_CASH_FLOW } from '@/lib/demo-data';
 
 export const aiInsightKeys = {
   patterns: ['ai', 'patterns'] as const,
@@ -8,9 +10,13 @@ export const aiInsightKeys = {
 };
 
 export function useSpendingPatternsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: aiInsightKeys.patterns,
-    queryFn: () => apiClient<{ patterns: Array<{ id: string; type: string; category: string; deviation: number; insight: string; period: string }> }>('/api/ai/insights/patterns'),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_SPENDING_PATTERNS)
+      : () => apiClient<{ patterns: Array<{ id: string; type: string; category: string; deviation: number; insight: string; period: string }> }>('/api/ai/insights/patterns'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
@@ -23,9 +29,13 @@ export function useAnalyzePatternsMutation() {
 }
 
 export function useBudgetSuggestionsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: aiInsightKeys.budgetSuggestions,
-    queryFn: () => apiClient<{ suggestions: Array<{ id: string; category: string; currentAmount: number; suggestedAmount: number; reasoning: string; estimatedSavings: number; status: string }> }>('/api/ai/insights/budget-suggestions'),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_BUDGET_SUGGESTIONS)
+      : () => apiClient<{ suggestions: Array<{ id: string; category: string; currentAmount: number; suggestedAmount: number; reasoning: string; estimatedSavings: number; status: string }> }>('/api/ai/insights/budget-suggestions'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
@@ -46,14 +56,17 @@ export function useApplySuggestionMutation() {
 }
 
 export function useCashFlowQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: aiInsightKeys.cashFlow,
-    queryFn: () => apiClient<{
-      dailyBalances: Array<{ day: number; date: string; projectedBalance: number; isProjected: boolean }>;
-      projectedZeroDate: string | null;
-      summary: string;
-      stats: { totalBudget: number; totalSpent: number; remaining: number; dailySpendRate: number; daysRemaining: number };
-    }>('/api/ai/insights/cash-flow'),
-    staleTime: 5 * 60 * 1000,
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_CASH_FLOW)
+      : () => apiClient<{
+          dailyBalances: Array<{ day: number; date: string; projectedBalance: number; isProjected: boolean }>;
+          projectedZeroDate: string | null;
+          summary: string;
+          stats: { totalBudget: number; totalSpent: number; remaining: number; dailySpendRate: number; daysRemaining: number };
+        }>('/api/ai/insights/cash-flow'),
+    staleTime: isDemo ? Infinity : 5 * 60 * 1000,
   });
 }

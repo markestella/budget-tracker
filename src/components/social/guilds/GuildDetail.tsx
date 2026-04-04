@@ -8,6 +8,7 @@ import {
   useLeaveGuildMutation,
   useSendGuildMessageMutation,
 } from '@/hooks/api/useGuildHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 
 interface GuildDetailProps {
   guildId: string;
@@ -23,6 +24,7 @@ export function GuildDetail({ guildId, onBack }: GuildDetailProps) {
   const { data: rankings } = useGuildLeaderboardQuery(guildId);
   const leaveMutation = useLeaveGuildMutation();
   const sendMsg = useSendGuildMessageMutation(guildId);
+  const guardMutation = useDemoGuard();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,6 +39,7 @@ export function GuildDetail({ guildId, onBack }: GuildDetailProps) {
   }
 
   const handleSend = () => {
+    if (!guardMutation()) return;
     const trimmed = message.trim();
     if (!trimmed) return;
     sendMsg.mutate(trimmed);
@@ -65,7 +68,7 @@ export function GuildDetail({ guildId, onBack }: GuildDetailProps) {
         </div>
         {guild.myRole !== 'OWNER' && (
           <button
-            onClick={() => leaveMutation.mutate(guildId)}
+            onClick={() => { if (!guardMutation()) return; leaveMutation.mutate(guildId); }}
             disabled={leaveMutation.isPending}
             className="rounded-lg px-3 py-1.5 text-sm text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/20"
           >

@@ -15,6 +15,7 @@ import {
   useSavingsGoalsQuery,
   useUpdateSavingsGoalMutation,
 } from '@/hooks/api/useSavingsHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import { formatCurrency } from '@/lib/expense-ui';
 import type { SavingsGoalPayload, SavingsGoalRecord, SavingsTransactionPayload } from '@/types/savings';
 
@@ -24,6 +25,7 @@ export default function InvestmentsPage() {
   const updateGoalMutation = useUpdateSavingsGoalMutation();
   const deleteGoalMutation = useDeleteSavingsGoalMutation();
   const createTransactionMutation = useCreateSavingsTransactionMutation();
+  const guardMutation = useDemoGuard();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoalRecord | null>(null);
 
@@ -43,6 +45,7 @@ export default function InvestmentsPage() {
   }, [goals]);
 
   async function handleGoalSubmit(payload: SavingsGoalPayload) {
+    if (!guardMutation()) return;
     try {
       if (editingGoal) {
         await updateGoalMutation.mutateAsync({ id: editingGoal.id, payload });
@@ -61,6 +64,7 @@ export default function InvestmentsPage() {
   }
 
   async function handleDelete(goal: SavingsGoalRecord) {
+    if (!guardMutation()) return;
     if (!window.confirm(`Delete ${goal.name}?`)) {
       return;
     }
@@ -75,6 +79,7 @@ export default function InvestmentsPage() {
   }
 
   async function handleTransaction(goalId: string, payload: SavingsTransactionPayload) {
+    if (!guardMutation()) return;
     try {
       await createTransactionMutation.mutateAsync({ id: goalId, payload });
       toast.success('Savings transaction logged');

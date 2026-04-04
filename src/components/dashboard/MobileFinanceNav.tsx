@@ -5,10 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '../ThemeProvider';
 import { financeNavItems } from './nav-config';
+import { useDemo } from '@/components/providers/DemoProvider';
 
 export function MobileFinanceNav() {
   const pathname = usePathname();
   const { isDark } = useTheme();
+  const { isDemo } = useDemo();
+  const demoSuffix = isDemo ? '?demo=true' : '';
 
   return (
     <div
@@ -23,7 +26,7 @@ export function MobileFinanceNav() {
           return (
             <Link
               key={item.id}
-              href={item.href}
+              href={`${item.href}${demoSuffix}`}
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive
                   ? isDark

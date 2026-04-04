@@ -16,6 +16,16 @@ export function ServiceWorkerProvider() {
       return;
     }
 
+    // In development, unregister any existing service worker to prevent stale caches
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+      return;
+    }
+
     let isMounted = true;
 
     async function registerServiceWorker() {

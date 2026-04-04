@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_ACCOUNTS, DEMO_ACCOUNT_DASHBOARD } from '@/lib/demo-data';
 
 type NumericValue = number | string;
 type AccountType = 'SAVINGS' | 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD';
@@ -85,14 +87,18 @@ const createAccount = (payload: AccountMutationInput) =>
   });
 
 export function useAccountsQuery() {
+  const { isDemo } = useDemo();
+
   const accountsQuery = useQuery({
     queryKey: accountKeys.lists(),
-    queryFn: fetchAccounts,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_ACCOUNTS) : fetchAccounts,
+    staleTime: isDemo ? Infinity : undefined,
   });
 
   const dashboardQuery = useQuery({
     queryKey: accountKeys.dashboard(),
-    queryFn: fetchAccountDashboard,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_ACCOUNT_DASHBOARD) : fetchAccountDashboard,
+    staleTime: isDemo ? Infinity : undefined,
   });
 
   return {

@@ -2,6 +2,8 @@
 
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_SOCIAL_FEED } from '@/lib/demo-data';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -34,13 +36,17 @@ export const feedKeys = {
 // ─── Queries ───────────────────────────────────────────
 
 export function useFeedInfiniteQuery() {
+  const { isDemo } = useDemo();
   return useInfiniteQuery({
     queryKey: feedKeys.list(),
-    queryFn: ({ pageParam = 1 }) =>
-      apiClient<FeedResponse>(`/api/social/feed?page=${pageParam}`),
+    queryFn: isDemo
+      ? (): Promise<FeedResponse> => Promise.resolve(DEMO_SOCIAL_FEED)
+      : ({ pageParam = 1 }) =>
+          apiClient<FeedResponse>(`/api/social/feed?page=${pageParam}`),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

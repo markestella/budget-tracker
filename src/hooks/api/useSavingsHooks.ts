@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_SAVINGS_GOALS, DEMO_SAVINGS_HISTORY } from '@/lib/demo-data';
 import type {
   SavingsGoalPayload,
   SavingsGoalRecord,
@@ -36,17 +38,21 @@ const createSavingsTransaction = ({ id, payload }: { id: string; payload: Saving
 });
 
 export function useSavingsGoalsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
-    queryFn: fetchSavingsGoals,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_SAVINGS_GOALS) : fetchSavingsGoals,
     queryKey: savingsKeys.lists(),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useSavingsHistoryQuery(id: string, enabled = true) {
+  const { isDemo } = useDemo();
   return useQuery({
-    enabled,
-    queryFn: () => fetchSavingsHistory(id),
+    enabled: isDemo ? true : enabled,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_SAVINGS_HISTORY) : () => fetchSavingsHistory(id),
     queryKey: savingsKeys.history(id),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

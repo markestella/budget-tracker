@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_LEADERBOARD, DEMO_LEADERBOARD_OPT_IN, DEMO_MY_RANK } from '@/lib/demo-data';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -50,30 +52,38 @@ export const leaderboardKeys = {
 // ─── Queries ───────────────────────────────────────────
 
 export function useLeaderboardQuery(type: string, period: string, page: number) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: leaderboardKeys.list(type, period, page),
-    queryFn: () =>
-      apiClient<LeaderboardResponse>(
-        `/api/social/leaderboard?type=${type}&period=${period}&page=${page}`,
-      ),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_LEADERBOARD)
+      : () => apiClient<LeaderboardResponse>(
+          `/api/social/leaderboard?type=${type}&period=${period}&page=${page}`,
+        ),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useLeaderboardOptInQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: leaderboardKeys.optIn(),
-    queryFn: () => apiClient<LeaderboardOptIn>('/api/social/leaderboard/opt-in'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_LEADERBOARD_OPT_IN) : () => apiClient<LeaderboardOptIn>('/api/social/leaderboard/opt-in'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useMyRankQuery(type: string, period: string, enabled: boolean) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: leaderboardKeys.myRank(type, period),
-    queryFn: () =>
-      apiClient<MyRank>(
-        `/api/social/leaderboard/me?type=${type}&period=${period}`,
-      ),
-    enabled,
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_MY_RANK)
+      : () => apiClient<MyRank>(
+          `/api/social/leaderboard/me?type=${type}&period=${period}`,
+        ),
+    enabled: isDemo || enabled,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import {
@@ -13,6 +15,7 @@ import {
   SettingsNav,
 } from '@/components/settings';
 import type { SettingsSection } from '@/components/settings';
+import { useDemo } from '@/components/providers/DemoProvider';
 import {
   useCustomCategoriesQuery,
   useDeleteAccountMutation,
@@ -33,7 +36,16 @@ import {
 } from '@/hooks/api/useNotificationHooks';
 
 export default function SettingsPage() {
+  const { isDemo } = useDemo();
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
+
+  useEffect(() => {
+    if (isDemo) {
+      toast.info('Settings are not available in demo mode. Sign up to customize your experience!');
+      router.replace('/register');
+    }
+  }, [isDemo, router]);
 
   const settingsQuery = useSettingsQuery();
   const categoriesQuery = useCustomCategoriesQuery();

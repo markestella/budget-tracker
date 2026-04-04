@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_GUILDS, DEMO_GUILD_DISCOVER, DEMO_GUILD_DETAIL, DEMO_GUILD_LEADERBOARD } from '@/lib/demo-data';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -64,37 +66,46 @@ export const guildKeys = {
 // ─── Queries ───────────────────────────────────────────
 
 export function useMyGuildsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: guildKeys.myGuilds(),
-    queryFn: () => apiClient<GuildSummary[]>('/api/social/guilds'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_GUILDS) : () => apiClient<GuildSummary[]>('/api/social/guilds'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useGuildDiscoverQuery(page: number, search?: string) {
+  const { isDemo } = useDemo();
   const params = new URLSearchParams({ page: String(page) });
   if (search) params.set('search', search);
   return useQuery({
     queryKey: guildKeys.discover(page, search),
-    queryFn: () =>
-      apiClient<{ guilds: GuildDiscoverEntry[]; totalGuilds: number; page: number; totalPages: number }>(
-        `/api/social/guilds/discover?${params}`,
-      ),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_GUILD_DISCOVER)
+      : () => apiClient<{ guilds: GuildDiscoverEntry[]; totalGuilds: number; page: number; totalPages: number }>(
+          `/api/social/guilds/discover?${params}`,
+        ),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useGuildDetailQuery(id: string) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: guildKeys.detail(id),
-    queryFn: () => apiClient<GuildDetail>(`/api/social/guilds/${id}`),
-    enabled: !!id,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_GUILD_DETAIL) : () => apiClient<GuildDetail>(`/api/social/guilds/${id}`),
+    enabled: isDemo || !!id,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useGuildLeaderboardQuery(id: string) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: guildKeys.leaderboard(id),
-    queryFn: () => apiClient<GuildMemberRanking[]>(`/api/social/guilds/${id}/leaderboard`),
-    enabled: !!id,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_GUILD_LEADERBOARD) : () => apiClient<GuildMemberRanking[]>(`/api/social/guilds/${id}/leaderboard`),
+    enabled: isDemo || !!id,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

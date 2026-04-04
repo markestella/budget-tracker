@@ -3,16 +3,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLeaderboardOptInQuery, useLeaderboardOptInMutation } from '@/hooks/api/useLeaderboardHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 
 export function LeaderboardOptInPrompt() {
   const [displayName, setDisplayName] = useState('');
   const { data: optIn, isLoading } = useLeaderboardOptInQuery();
   const mutation = useLeaderboardOptInMutation();
+  const guardMutation = useDemoGuard();
 
   if (isLoading) return null;
   if (optIn?.isOptedIn) return null;
 
   const handleOptIn = () => {
+    if (!guardMutation()) return;
     if (!displayName.trim() || displayName.length < 2) return;
     mutation.mutate({ isOptedIn: true, displayName: displayName.trim() });
   };

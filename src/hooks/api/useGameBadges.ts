@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_BADGES, DEMO_EARNED_BADGES } from '@/lib/demo-data';
 
 export interface BadgeData {
   id: string;
@@ -24,16 +26,20 @@ export const badgeKeys = {
 };
 
 export function useGameBadgesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: badgeKeys.list(),
-    queryFn: () => apiClient<BadgeData[]>('/api/game/badges'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_BADGES) : () => apiClient<BadgeData[]>('/api/game/badges'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useEarnedBadgesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: badgeKeys.earned(),
-    queryFn: () => apiClient('/api/game/badges/earned'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_EARNED_BADGES) : () => apiClient('/api/game/badges/earned'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

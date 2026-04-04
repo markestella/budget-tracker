@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useFeedReactMutation, type FeedEvent } from '@/hooks/api/useSocialFeedHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 
 const EMOJIS = ['👏', '🔥', '💪', '🎉'] as const;
 const EVENT_ICONS: Record<string, string> = {
@@ -29,8 +30,10 @@ interface AchievementFeedCardProps {
 
 export function AchievementFeedCard({ event }: AchievementFeedCardProps) {
   const reactMutation = useFeedReactMutation();
+  const guardMutation = useDemoGuard();
 
   const handleReact = (emoji: string) => {
+    if (!guardMutation()) return;
     reactMutation.mutate({ eventId: event.id, emoji });
   };
 

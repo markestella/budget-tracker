@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_EXPENSES, DEMO_RECENT_EXPENSES } from '@/lib/demo-data';
 import { buildExpenseSearchParams } from '@/lib/expense-ui';
 import type {
   ExpenseFilters,
@@ -42,16 +44,20 @@ const deleteExpense = (id: string) => apiClient<{ success: boolean }>(`/api/expe
 });
 
 export function useExpensesQuery(filters: ExpenseFilters) {
+  const { isDemo } = useDemo();
   return useQuery({
-    queryFn: () => fetchExpenses(filters),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_EXPENSES) : () => fetchExpenses(filters),
     queryKey: expenseKeys.lists(filters),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useRecentExpensesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
-    queryFn: fetchRecentExpenses,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_RECENT_EXPENSES) : fetchRecentExpenses,
     queryKey: expenseKeys.recent(),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

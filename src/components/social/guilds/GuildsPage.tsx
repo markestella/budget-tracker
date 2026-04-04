@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMyGuildsQuery, useGuildDiscoverQuery, useJoinGuildMutation } from '@/hooks/api/useGuildHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import { GuildCard } from './GuildCard';
 import { GuildDetail } from './GuildDetail';
 import { CreateGuildDialog, JoinGuildDialog } from './GuildDialogs';
@@ -18,6 +19,7 @@ export function GuildsPage() {
   const { data: myGuilds, isLoading: myLoading } = useMyGuildsQuery();
   const { data: discover, isLoading: discoverLoading } = useGuildDiscoverQuery(discoverPage);
   const joinMutation = useJoinGuildMutation();
+  const guardMutation = useDemoGuard();
 
   if (selectedGuildId) {
     return <GuildDetail guildId={selectedGuildId} onBack={() => setSelectedGuildId(null)} />;
@@ -111,7 +113,7 @@ export function GuildsPage() {
                         <span className="text-xs text-green-600 dark:text-green-400">Already joined</span>
                       ) : (
                         <button
-                          onClick={() => joinMutation.mutate({ guildId: g.id })}
+                          onClick={() => { if (!guardMutation()) return; joinMutation.mutate({ guildId: g.id }); }}
                           disabled={joinMutation.isPending}
                           className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-amber-600 disabled:opacity-50"
                         >

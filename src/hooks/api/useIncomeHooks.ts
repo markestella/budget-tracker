@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_INCOME_SOURCES } from '@/lib/demo-data';
 
 type NumericValue = number | string;
 type IncomeCategory =
@@ -95,9 +97,11 @@ const createIncomeRecord = (payload: IncomeMutationInput) =>
   });
 
 export function useIncomeSourcesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: incomeKeys.sources(),
-    queryFn: fetchIncomeSources,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_INCOME_SOURCES) : fetchIncomeSources,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_BUDGET_ITEMS, DEMO_BUDGET_SUMMARY, DEMO_CATEGORY_BUDGETS } from '@/lib/demo-data';
 import type {
   BudgetFilters,
   BudgetItem,
@@ -86,23 +88,29 @@ const updateCategoryBudget = (payload: CategoryBudgetPayload) =>
   });
 
 export function useBudgetItemsQuery(filters: BudgetFilters = {}) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: budgetKeys.items(filters),
-    queryFn: () => fetchBudgetItems(filters),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_BUDGET_ITEMS) : () => fetchBudgetItems(filters),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useBudgetSummaryQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: budgetKeys.summary(),
-    queryFn: fetchBudgetSummary,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_BUDGET_SUMMARY) : fetchBudgetSummary,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useCategoryBudgetsQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: budgetKeys.categories(),
-    queryFn: fetchCategoryBudgets,
+    queryFn: isDemo ? () => Promise.resolve(DEMO_CATEGORY_BUDGETS) : fetchCategoryBudgets,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

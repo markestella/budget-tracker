@@ -9,6 +9,7 @@ import {
   AvatarItemData,
 } from '@/hooks/api/useGameAvatar';
 import { AvatarDisplay } from './AvatarDisplay';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import Button from '@/components/ui/Button';
 
 const itemTypes = [
@@ -91,6 +92,7 @@ function ItemGrid({
 export function AvatarEditor({ className }: { className?: string }) {
   const { data: avatarData, isLoading } = useGameAvatarQuery();
   const updateMutation = useUpdateAvatarMutation();
+  const guardMutation = useDemoGuard();
 
   const avatar = avatarData?.avatar;
   const items = avatarData?.items ?? [];
@@ -126,6 +128,7 @@ export function AvatarEditor({ className }: { className?: string }) {
   }
 
   function handleSave() {
+    if (!guardMutation()) return;
     if (!currentSelections.baseId) return;
     updateMutation.mutate(currentSelections, {
       onSuccess: () => setSelections(null),

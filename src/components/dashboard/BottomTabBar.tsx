@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '../ThemeProvider';
 import { isFinanceRoute } from './nav-config';
+import { useDemo } from '@/components/providers/DemoProvider';
 
 interface TabDef {
   id: string;
@@ -75,6 +76,8 @@ const tabs: TabDef[] = [
 export function BottomTabBar() {
   const pathname = usePathname();
   const { isDark } = useTheme();
+  const { isDemo } = useDemo();
+  const demoSuffix = isDemo ? '?demo=true' : '';
 
   return (
     <nav
@@ -92,7 +95,7 @@ export function BottomTabBar() {
           return (
             <Link
               key={tab.id}
-              href={tab.href}
+              href={`${tab.href}${demoSuffix}`}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 min-h-[48px] transition-colors ${
                 isActive
                   ? isDark

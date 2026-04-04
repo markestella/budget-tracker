@@ -3,14 +3,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCreateGuildMutation, useJoinGuildMutation } from '@/hooks/api/useGuildHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 
 export function CreateGuildDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const mutation = useCreateGuildMutation();
+  const guardMutation = useDemoGuard();
 
   const handleSubmit = () => {
+    if (!guardMutation()) return;
     if (name.length < 3) return;
     mutation.mutate(
       { name, description: description || undefined, isPublic },
@@ -98,8 +101,10 @@ export function CreateGuildDialog({ open, onClose }: { open: boolean; onClose: (
 export function JoinGuildDialog({ open, onClose, guildId }: { open: boolean; onClose: () => void; guildId?: string }) {
   const [inviteCode, setInviteCode] = useState('');
   const mutation = useJoinGuildMutation();
+  const guardMutation = useDemoGuard();
 
   const handleJoin = () => {
+    if (!guardMutation()) return;
     if (!guildId) return;
     mutation.mutate(
       { guildId, inviteCode: inviteCode || undefined },

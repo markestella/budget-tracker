@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_CHALLENGES, DEMO_CHALLENGE_LEADERBOARD } from '@/lib/demo-data';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -45,30 +47,39 @@ export const challengeKeys = {
 // ─── Queries ───────────────────────────────────────────
 
 export function useChallengesQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: challengeKeys.list(),
-    queryFn: () => apiClient<ChallengeDefinition[]>('/api/challenges'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_CHALLENGES) : () => apiClient<ChallengeDefinition[]>('/api/challenges'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useChallengeDetailQuery(id: string) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: challengeKeys.detail(id),
-    queryFn: () => apiClient<ChallengeDetail>(`/api/challenges/${id}`),
-    enabled: !!id,
+    queryFn: isDemo
+      ? () => Promise.resolve({ ...DEMO_CHALLENGES[0], recentCompletions: [] } as ChallengeDetail)
+      : () => apiClient<ChallengeDetail>(`/api/challenges/${id}`),
+    enabled: isDemo || !!id,
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 
 export function useChallengeLeaderboardQuery(page: number) {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: challengeKeys.leaderboard(page),
-    queryFn: () =>
-      apiClient<{
-        entries: ChallengeLeaderboardEntry[];
-        totalEntries: number;
-        page: number;
-        totalPages: number;
-      }>(`/api/challenges/leaderboard?page=${page}`),
+    queryFn: isDemo
+      ? () => Promise.resolve(DEMO_CHALLENGE_LEADERBOARD)
+      : () => apiClient<{
+          entries: ChallengeLeaderboardEntry[];
+          totalEntries: number;
+          page: number;
+          totalPages: number;
+        }>(`/api/challenges/leaderboard?page=${page}`),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

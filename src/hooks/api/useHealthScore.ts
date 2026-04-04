@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_HEALTH_SCORE } from '@/lib/demo-data';
 
 export interface HealthScoreData {
   score: number;
@@ -30,8 +32,10 @@ export const healthScoreKeys = {
 };
 
 export function useHealthScoreQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: healthScoreKeys.detail(),
-    queryFn: () => apiClient<HealthScoreData>('/api/game/health-score'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_HEALTH_SCORE) : () => apiClient<HealthScoreData>('/api/game/health-score'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }

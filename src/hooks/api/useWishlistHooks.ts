@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/hooks/api/apiClient';
+import { useDemo } from '@/components/providers/DemoProvider';
+import { DEMO_WISHLIST } from '@/lib/demo-data';
 
 export interface WishlistItem {
   id: string;
@@ -29,9 +31,11 @@ export const wishlistKeys = {
 };
 
 export function useWishlistQuery() {
+  const { isDemo } = useDemo();
   return useQuery({
     queryKey: wishlistKeys.list(),
-    queryFn: () => apiClient<WishlistItem[]>('/api/wishlist'),
+    queryFn: isDemo ? () => Promise.resolve(DEMO_WISHLIST) : () => apiClient<WishlistItem[]>('/api/wishlist'),
+    staleTime: isDemo ? Infinity : undefined,
   });
 }
 

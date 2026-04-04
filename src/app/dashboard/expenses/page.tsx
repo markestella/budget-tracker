@@ -14,6 +14,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAccountsQuery } from '@/hooks/api/useAccountHooks';
 import { useBudgetItemsQuery } from '@/hooks/api/useBudgetHooks';
+import { useDemoGuard } from '@/hooks/useDemoGuard';
 import {
   useCreateExpenseMutation,
   useDeleteExpenseMutation,
@@ -50,6 +51,7 @@ function ExpensesPageContent() {
   const createExpenseMutation = useCreateExpenseMutation(filters);
   const updateExpenseMutation = useUpdateExpenseMutation();
   const deleteExpenseMutation = useDeleteExpenseMutation();
+  const guardMutation = useDemoGuard();
 
   useEffect(() => {
     if (!searchDirty) {
@@ -127,6 +129,7 @@ function ExpensesPageContent() {
   }
 
   async function handleCreateExpense(payload: ExpensePayload) {
+    if (!guardMutation()) return;
     try {
       await createExpenseMutation.mutateAsync(payload);
       setQuickAddValues(initialExpensePayload());
@@ -139,6 +142,7 @@ function ExpensesPageContent() {
   }
 
   async function handleDialogSubmit(payload: ExpensePayload) {
+    if (!guardMutation()) return;
     try {
       if (editingExpense) {
         await updateExpenseMutation.mutateAsync({
@@ -160,6 +164,7 @@ function ExpensesPageContent() {
   }
 
   async function handleDeleteExpense(expense: ExpenseRecord) {
+    if (!guardMutation()) return;
     if (!window.confirm(`Delete ${expense.merchant}?`)) {
       return;
     }

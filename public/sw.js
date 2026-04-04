@@ -1,4 +1,4 @@
-const SW_VERSION = 'mq-pwa-v1';
+const SW_VERSION = 'mq-pwa-v2';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const API_CACHE = `${SW_VERSION}-api`;
 const PAGE_CACHE = `${SW_VERSION}-pages`;
@@ -86,6 +86,11 @@ async function handleStaticRequest(request) {
   const cachedResponse = await cache.match(request);
 
   if (cachedResponse) {
+    fetch(request).then((response) => {
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+    }).catch(() => undefined);
     return cachedResponse;
   }
 
@@ -122,29 +127,25 @@ async function handleApiRequest(request) {
 
 async function handleNavigationRequest(request) {
   const cache = await caches.open(PAGE_CACHE);
-  const cachedResponse = await cache.match(request);
-  const networkPromise = fetch(request)
-    .then((response) => {
-      if (response.ok) {
-        cache.put(request, response.clone());
-      }
 
-      return response;
-    })
-    .catch(() => undefined);
+  try {
+    const response = await fetch(request);
 
-  if (cachedResponse) {
-    networkPromise.catch(() => undefined);
-    return cachedResponse;
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch (error) {
+    const cachedResponse = await cache.match(request);
+
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    const fallback = await caches.match('/dashboard');
+    return fallback || Response.error();
   }
-
-  const networkResponse = await networkPromise;
-
-  if (networkResponse) {
-    return networkResponse;
-  }
-
-  return caches.match('/dashboard') || Response.error();
 }
 
 function isStaticAssetRequest(pathname) {
