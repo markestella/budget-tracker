@@ -114,7 +114,7 @@ async function handleApiRequest(request) {
     }
 
     return response;
-  } catch (error) {
+  } catch {
     const cachedResponse = await cache.match(request);
 
     if (cachedResponse) {
@@ -136,7 +136,7 @@ async function handleNavigationRequest(request) {
     }
 
     return response;
-  } catch (error) {
+  } catch {
     const cachedResponse = await cache.match(request);
 
     if (cachedResponse) {

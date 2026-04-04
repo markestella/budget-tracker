@@ -1,27 +1,69 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useEffect, useSyncExternalStore } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { DemoProvider } from '@/components/providers/DemoProvider';
+
+const DEMO_STORAGE_KEY = 'demo';
+const DEMO_STORAGE_EVENT = 'moneyquest-demo-change';
+
+function readDemoPreference() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return sessionStorage.getItem(DEMO_STORAGE_KEY) === '1';
+}
+
+function subscribeToDemoPreference(onStoreChange: () => void) {
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
+
+  const handleStoreChange = () => onStoreChange();
+
+  window.addEventListener(DEMO_STORAGE_EVENT, handleStoreChange);
+  window.addEventListener('storage', handleStoreChange);
+
+  return () => {
+    window.removeEventListener(DEMO_STORAGE_EVENT, handleStoreChange);
+    window.removeEventListener('storage', handleStoreChange);
+  };
+}
+
+function emitDemoPreferenceChange() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new Event(DEMO_STORAGE_EVENT));
+}
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const { status } = useSession();
   const urlDemo = searchParams.get('demo') === 'true';
-  const [sessionDemo, setSessionDemo] = useState(false);
+  const sessionDemo = useSyncExternalStore(
+    subscribeToDemoPreference,
+    readDemoPreference,
+    () => false
+  );
 
   useEffect(() => {
     if (urlDemo) {
-      sessionStorage.setItem('demo', '1');
-      setSessionDemo(true);
-    } else if (status === 'authenticated') {
-      sessionStorage.removeItem('demo');
-      setSessionDemo(false);
-    } else {
-      setSessionDemo(sessionStorage.getItem('demo') === '1');
+      if (!sessionDemo) {
+        sessionStorage.setItem(DEMO_STORAGE_KEY, '1');
+        emitDemoPreferenceChange();
+      }
+      return;
     }
-  }, [urlDemo, status]);
+
+    if (status === 'authenticated' && sessionDemo) {
+      sessionStorage.removeItem(DEMO_STORAGE_KEY);
+      emitDemoPreferenceChange();
+    }
+  }, [sessionDemo, status, urlDemo]);
 
   const isDemo = urlDemo || (status !== 'authenticated' && sessionDemo);
 

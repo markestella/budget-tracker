@@ -9,7 +9,6 @@ import {
   ReceiptText,
   Target,
   Wallet,
-  Star,
   Sparkles,
   Banknote,
   Trophy,
