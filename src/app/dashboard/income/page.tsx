@@ -118,9 +118,14 @@ const IncomePage: React.FC = () => {
   // Fetch all data
   const fetchData = async () => {
     if (status !== 'authenticated') return;
+    setLoading(true);
+    await loadData();
+  };
+
+  const loadData = async () => {
+    if (status !== 'authenticated') return;
     
     try {
-      setLoading(true);
       const [sourcesRes, recordsRes, calculationsRes] = await Promise.all([
         fetch('/api/income/sources', { credentials: 'include' }),
         fetch('/api/income/records?limit=50', { credentials: 'include' }),
@@ -149,7 +154,7 @@ const IncomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 

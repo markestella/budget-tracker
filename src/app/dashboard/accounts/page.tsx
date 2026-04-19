@@ -77,8 +77,12 @@ export default function AccountsPage() {
   };
 
   const fetchData = async () => {
+    setLoading(true);
+    await loadData();
+  };
+
+  const loadData = async () => {
     try {
-      setLoading(true);
       const [accountsRes, summaryRes] = await Promise.all([
         fetch('/api/accounts', { credentials: 'include' }),
         fetch('/api/accounts/dashboard', { credentials: 'include' })
@@ -101,7 +105,7 @@ export default function AccountsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    loadData();
   }, []);
 
   const handleAccountSubmit = async (accountData: Omit<Account, 'id' | 'calculations'>) => {

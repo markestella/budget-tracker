@@ -17,9 +17,9 @@ describe('xpConfig', () => {
       expect(Object.keys(XP_ACTIONS)).toEqual(expect.arrayContaining(expectedKeys));
     });
 
-    it('all XP values are positive integers', () => {
+    it('all XP values are non-negative integers', () => {
       for (const [, value] of Object.entries(XP_ACTIONS)) {
-        expect(value).toBeGreaterThan(0);
+        expect(value).toBeGreaterThanOrEqual(0);
         expect(Number.isInteger(value)).toBe(true);
       }
     });

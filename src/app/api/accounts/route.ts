@@ -22,8 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const accounts = await (prisma as any).financialAccount.findMany({
+    const accounts = await prisma.financialAccount.findMany({
       where: { userId: user.id },
       orderBy: [
         { accountType: 'asc' },
@@ -32,8 +31,7 @@ export async function GET() {
     });
 
     // Calculate derived fields for each account
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const accountsWithCalculations = accounts.map((account: any) => {
+    const accountsWithCalculations = accounts.map((account) => {
       let calculations: {
         availableCredit?: number;
         utilizationRate?: number;
@@ -104,8 +102,7 @@ export async function POST(request: Request) {
       statementDate = calculateStatementDate(data.cutoffDate);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const account = await (prisma as any).financialAccount.create({
+    const account = await prisma.financialAccount.create({
       data: {
         userId: user.id,
         accountType: data.accountType,

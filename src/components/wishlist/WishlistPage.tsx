@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useWishlistQuery, useCreateWishlistItem, useAddFunds, useUpdateWishlistItem, useDeleteWishlistItem } from '@/hooks/api/useWishlistHooks';
+import { useWishlistQuery, useCreateWishlistItem, useAddFunds, useUpdateWishlistItem } from '@/hooks/api/useWishlistHooks';
 import WishlistCard from './WishlistCard';
 import WishlistForm from './WishlistForm';
 import AddFundsDialog from './AddFundsDialog';
@@ -14,8 +14,6 @@ export default function WishlistPage() {
   const createItem = useCreateWishlistItem();
   const addFunds = useAddFunds();
   const updateItem = useUpdateWishlistItem();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _deleteItem = useDeleteWishlistItem();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { PaymentCalculator } from '@/lib/paymentCalculator';
 
@@ -34,8 +35,7 @@ export class PaymentRecordGenerator {
       await this.cleanupInvalidRecords();
 
       // Get active income sources
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const whereClause: any = {
+      const whereClause: Prisma.IncomeSourceWhereInput = {
         isActive: true,
         frequency: { not: 'ONE_TIME' }
       };
@@ -246,12 +246,10 @@ export class PaymentRecordGenerator {
         try {
           const nextPaymentDate = PaymentCalculator.getNextPaymentDate(
             {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              frequency: source.frequency as any,
+              frequency: source.frequency as IncomeSource['frequency'],
               scheduleDays: source.scheduleDays || undefined,
               scheduleWeekday: source.scheduleWeekday || undefined,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              scheduleWeek: source.scheduleWeek as any || undefined,
+              scheduleWeek: source.scheduleWeek as IncomeSource['scheduleWeek'] || undefined,
               scheduleTime: source.scheduleTime || undefined,
               amount: parseFloat(source.amount.toString()),
               useManualAmounts: source.useManualAmounts || false,

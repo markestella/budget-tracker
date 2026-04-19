@@ -56,15 +56,13 @@ export async function GET(request: Request) {
     let totalOverdue = 0;
     const sourceBreakdown: Array<Record<string, unknown>> = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    incomeSources.forEach((source: any) => {
+    incomeSources.forEach((source) => {
       let sourceExpected = 0;
       let sourceReceived = 0;
       let sourcePending = 0;
       let sourceOverdue = 0;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      source.incomeRecords.forEach((record: any) => {
+      source.incomeRecords.forEach((record) => {
         const expectedAmount = parseFloat(source.amount.toString());
         sourceExpected += expectedAmount;
 
@@ -191,8 +189,7 @@ export async function GET(request: Request) {
             },
           });
           
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          monthlyReceived += monthRecords.reduce((sum: number, record: any) => sum + (parseFloat(record.actualAmount?.toString() || '0')), 0);
+          monthlyReceived += monthRecords.reduce((sum: number, record) => sum + (parseFloat(record.actualAmount?.toString() || '0')), 0);
         }
         
         monthlyProjections.push({
@@ -230,13 +227,23 @@ export async function GET(request: Request) {
       },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upcomingPayments: any[] = [];
+    const upcomingPayments: {
+      id: string;
+      expectedDate: Date;
+      expectedAmount: number;
+      status: string;
+      incomeSource: {
+        id: string;
+        name: string;
+        category: string;
+        amount: number;
+        perPaymentAmount: number;
+      };
+    }[] = [];
     const currentDateForCalc = new Date();
     
     // Generate upcoming payments for each active income source
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    activeIncomeSources.forEach((source: any) => {
+    activeIncomeSources.forEach((source) => {
       try {
         // Convert scheduleDayAmounts from JSON to proper format
         let scheduleDayAmounts = {};
@@ -246,8 +253,7 @@ export async function GET(request: Request) {
 
         const upcoming = PaymentCalculator.getUpcomingPayments(
           {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            frequency: source.frequency as any,
+            frequency: source.frequency as CalculatorFrequency,
             scheduleDays: source.scheduleDays || undefined,
             scheduleWeekday: source.scheduleWeekday || undefined,
             scheduleWeek: source.scheduleWeek || undefined,

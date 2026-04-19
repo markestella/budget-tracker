@@ -71,7 +71,12 @@ function BudgetsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const filters = readFilters(new URLSearchParams(searchParams.toString()));
-  const [searchValue, setSearchValue] = useState(filters.search ?? '');
+  const filtersSearch = filters.search ?? '';
+  const [searchValue, setSearchValue] = useState(filtersSearch);
+
+  if (searchValue !== filtersSearch && filtersSearch !== searchValue.trim()) {
+    setSearchValue(filtersSearch);
+  }
   const [dialogType, setDialogType] = useState<BudgetItemType>('CONSTANT');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
@@ -86,10 +91,6 @@ function BudgetsPageContent() {
   const deleteBudgetItemMutation = useDeleteBudgetItemMutation();
   const categoryBudgetMutation = useCategoryBudgetMutation();
   const guardMutation = useDemoGuard();
-
-  useEffect(() => {
-    setSearchValue(filters.search ?? '');
-  }, [filters.search]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
