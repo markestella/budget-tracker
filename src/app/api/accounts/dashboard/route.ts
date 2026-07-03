@@ -37,8 +37,7 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const accounts = await (prisma as any).financialAccount.findMany({
+    const accounts = await prisma.financialAccount.findMany({
       where: { 
         userId: user.id,
         status: 'ACTIVE' 

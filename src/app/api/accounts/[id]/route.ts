@@ -26,8 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const account = await (prisma as any).financialAccount.findFirst({
+    const account = await prisma.financialAccount.findFirst({
       where: {
         id,
         userId: user.id,
@@ -84,11 +83,23 @@ export async function PUT(
       statementDate = calculateStatementDate(data.cutoffDate);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const account = await (prisma as any).financialAccount.update({
+    const existingAccount = await prisma.financialAccount.findFirst({
       where: {
         id,
         userId: user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingAccount) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+
+    const account = await prisma.financialAccount.update({
+      where: {
+        id,
       },
       data: {
         accountType: data.accountType,
@@ -138,11 +149,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma as any).financialAccount.delete({
+    const existingAccount = await prisma.financialAccount.findFirst({
       where: {
         id,
         userId: user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingAccount) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+
+    await prisma.financialAccount.delete({
+      where: {
+        id,
       },
     });
 
