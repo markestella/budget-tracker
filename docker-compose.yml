@@ -1,6 +1,27 @@
-version: '3.8'
-
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+    image: moneyquest:latest
+    container_name: budget-tracker_app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://budget_tracker:budget_tracker_password@postgres:5432/budget_tracker_db?schema=public
+      DIRECT_URL: postgresql://budget_tracker:budget_tracker_password@postgres:5432/budget_tracker_db?schema=public
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     image: postgres:15
     container_name: budget-tracker_db
